@@ -1,0 +1,486 @@
+import { useMemo, useState } from "react"
+import { motion } from "framer-motion"
+import { useTranslation } from "react-i18next"
+import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
+import gymBackground from "@/assets/gym-background.png"
+
+interface AvatarSectionProps {
+  level: number
+  characterName: string
+  selectedCharacter: CharacterId
+  monthlyCharacterLevel: number
+  weight: number
+  height: number
+  xp: number
+  nextLevelXp: number
+  onSaveProfile: (profile: { weight: number; height: number }) => void
+}
+
+const MOTIVATION_QUOTES = [
+  "荳豁ｩ縺壹▽遨阪∩荳翫￡繧後・縲∵乖譌･縺ｮ閾ｪ蛻・ｒ雜・∴繧峨ｌ繧九・,
+  "辟ｦ繧峨↑縺上※縺・＞縲らｶ壹￠繧九％縺ｨ縺悟ｼｷ縺輔↓縺ｪ繧九・,
+  "莉頑律縺ｮ蜉ｪ蜉帙′縲∵・譌･縺ｮ閾ｪ菫｡繧偵▽縺上ｋ縲・,
+  "蟆上＆縺ｪ蜑埼ｲ縺ｧ繧ゅ∵ｭ｢縺ｾ繧峨↑縺・％縺ｨ縺悟､ｧ蛻・□縲・,
+  "繧・ｋ豌励・蠕・▽繧ゅ・縺倥ｃ縺ｪ縺・ょ虚縺・※逕溘∪繧後ｋ繧ゅ・縺縲・,
+  "遲玖ｉ縺ｯ縲∬｣丞・繧峨↑縺・巻蜉帙・險ｼ縺縲・,
+  "髯千阜縺ｯ諤昴▲縺ｦ縺・ｋ繧医ｊ驕縺・ゅｂ縺・ｸ蝗槭□縺第倦繧ゅ≧縲・,
+  "荳蝗槭・遨阪∩驥阪・縺後∝､ｧ縺阪↑螟牙喧縺ｫ縺､縺ｪ縺後ｋ縲・,
+  "譏ｨ譌･繧ｵ繝懊ｋ逅・罰繧医ｊ縲∽ｻ頑律蜍輔￥逅・罰繧帝∈縺ｼ縺・・,
+  "譛ｪ螳梧・縺ｮ閾ｪ蛻・％縺昴∽ｼｸ縺ｳ縺励ｍ縺ｮ縺九◆縺ｾ繧翫□縲・,
+  "逍ｲ繧後※縺・※繧ゅ∝燕縺ｫ騾ｲ繧√・縺昴ｌ縺ｧ蜍昴■縺縲・,
+  "蠑ｷ縺輔・謇崎・縺倥ｃ縺ｪ縺・らｿ呈・縺ｮ邨先棡縺縲・,
+  "縺ｧ縺阪ｋ縺九←縺・°縺倥ｃ縺ｪ縺・ゅｄ繧九°縺ｩ縺・°縺縲・,
+  "蜉ｪ蜉帙・縲∵悴譚･縺ｫ騾√ｋ譛鬮倥・謚戊ｳ・□縲・,
+  "闍ｦ縺励￥縺ｦ繧ら｢ｺ螳溘↓騾ｲ繧薙〒縺・ｌ縺ｰ縲√◎繧後〒蜊∝・縺縲・,
+  "豁｣縺励＞繝輔か繝ｼ繝繧医ｊ蜈医↓縲∫ｶ壹￠繧玖ｦ壽ぁ繧呈戟縺ｨ縺・・,
+  "莉頑律縺ｮ謖第姶縺後∵・譌･縺ｮ繝ｬ繝吶Ν繧｢繝・・縺ｫ縺ｪ繧九・,
+  "髯千阜縺ｮ蜈医↓縲∵怙鬮倥・閾ｪ蛻・′縺・ｋ縲・,
+  "閾ｪ蛻・ｒ骰帙∴繧九◆縺ｳ縺ｫ縲∝ｿ・ｂ蠑ｷ縺上↑繧九・,
+  "遨阪∩荳翫￡縺溷屓謨ｰ縺縺代∬・菫｡縺ｯ螟ｧ縺阪￥縺ｪ繧九・,
+  "霑ｷ縺｣縺溘ｉ荳繧ｻ繝・ヨ縲ょｧ九ａ繧後・豬√ｌ縺ｯ螟峨ｏ繧九・,
+  "譛ｬ豌励・蜉ｪ蜉帙・縲∵ｯ取律縺ｮ驕ｸ謚槭°繧臥函縺ｾ繧後ｋ縲・,
+  "蜍昴▲縺滓律繧医ｊ縲√■繧・ｓ縺ｨ邯壹￠縺滓律繧定ｪ・ｍ縺・・,
+  "荳迸ｬ縺ｧ螟峨ｏ繧峨↑縺上※縺・＞縲よ乖譌･繧医ｊ蠑ｷ縺代ｌ縺ｰ縺・＞縲・,
+] as const
+
+function getAvatarLevel(level: number) {
+  return Math.max(1, Math.min(5, level))
+}
+
+export function RealisticCharacter({ level }: { level: number }) {
+  const avatarLevel = useMemo(() => getAvatarLevel(level), [level])
+
+  return (
+    <svg
+      width="140"
+      height="304"
+      viewBox="0 0 120 260"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {avatarLevel === 1 && (
+        <>
+          <ellipse cx="60" cy="28" rx="14" ry="17" fill="#F5D0A9"/>
+          <ellipse cx="60" cy="14" rx="15" ry="12" fill="#3A2A1A"/>
+          <circle cx="53" cy="30" r="1.5" fill="#2D1B0E"/>
+          <circle cx="67" cy="30" r="1.5" fill="#2D1B0E"/>
+          <path d="M56 37 Q60 40 64 37" stroke="#2D1B0E" strokeWidth="1.2" fill="none"/>
+          <rect x="55" y="44" width="10" height="10" fill="#F5D0A9"/>
+          <path d="M40 54 L80 54 L78 130 L42 130 Z" fill="#E8C09A"/>
+          <path d="M48 68 Q60 72 72 68" stroke="#D4A882" strokeWidth="0.8" fill="none"/>
+          <line x1="60" y1="75" x2="60" y2="125" stroke="#D4A882" strokeWidth="0.6"/>
+          <ellipse cx="38" cy="58" rx="6" ry="8" fill="#E8C09A"/>
+          <ellipse cx="82" cy="58" rx="6" ry="8" fill="#E8C09A"/>
+          <rect x="28" y="60" width="10" height="40" rx="5" fill="#F5D0A9"/>
+          <rect x="82" y="60" width="10" height="40" rx="5" fill="#F5D0A9"/>
+          <rect x="29" y="98" width="9" height="35" rx="4" fill="#F5D0A9"/>
+          <rect x="82" y="98" width="9" height="35" rx="4" fill="#F5D0A9"/>
+          <ellipse cx="33" cy="135" rx="5" ry="6" fill="#F5D0A9"/>
+          <ellipse cx="87" cy="135" rx="5" ry="6" fill="#F5D0A9"/>
+          <path d="M42 128 L78 128 L76 170 L62 170 L60 145 L58 170 L44 170 Z" fill="#2A4A7A"/>
+          <rect x="44" y="168" width="14" height="55" rx="7" fill="#F5D0A9"/>
+          <rect x="62" y="168" width="14" height="55" rx="7" fill="#F5D0A9"/>
+          <rect x="45" y="210" width="12" height="30" rx="6" fill="#F5D0A9"/>
+          <rect x="63" y="210" width="12" height="30" rx="6" fill="#F5D0A9"/>
+          <rect x="42" y="238" width="18" height="10" rx="4" fill="#444"/>
+          <rect x="60" y="238" width="18" height="10" rx="4" fill="#444"/>
+        </>
+      )}
+      {avatarLevel === 2 && (
+        <>
+          <ellipse cx="60" cy="28" rx="14" ry="17" fill="#F5D0A9"/>
+          <ellipse cx="60" cy="14" rx="15" ry="12" fill="#3A2A1A"/>
+          <circle cx="53" cy="30" r="1.5" fill="#2D1B0E"/>
+          <circle cx="67" cy="30" r="1.5" fill="#2D1B0E"/>
+          <path d="M56 37 Q60 40 64 37" stroke="#2D1B0E" strokeWidth="1.2" fill="none"/>
+          <rect x="54" y="44" width="12" height="10" fill="#F5D0A9"/>
+          <path d="M37 54 L83 54 L80 130 L40 130 Z" fill="#EDCBA5"/>
+          <path d="M46 62 Q53 70 60 65 Q67 70 74 62" stroke="#D4A882" strokeWidth="1" fill="none"/>
+          <path d="M46 64 Q53 72 60 68" fill="#E2BB94" stroke="none"/>
+          <path d="M74 64 Q67 72 60 68" fill="#E2BB94" stroke="none"/>
+          <line x1="60" y1="72" x2="60" y2="125" stroke="#D4A882" strokeWidth="0.8"/>
+          <ellipse cx="35" cy="58" rx="8" ry="10" fill="#EDCBA5"/>
+          <ellipse cx="85" cy="58" rx="8" ry="10" fill="#EDCBA5"/>
+          <rect x="25" y="60" width="13" height="42" rx="6" fill="#F5D0A9"/>
+          <rect x="82" y="60" width="13" height="42" rx="6" fill="#F5D0A9"/>
+          <ellipse cx="31" cy="75" rx="7" ry="12" fill="#F0C89E"/>
+          <ellipse cx="89" cy="75" rx="7" ry="12" fill="#F0C89E"/>
+          <rect x="27" y="100" width="10" height="35" rx="5" fill="#F5D0A9"/>
+          <rect x="83" y="100" width="10" height="35" rx="5" fill="#F5D0A9"/>
+          <ellipse cx="32" cy="137" rx="5" ry="6" fill="#F5D0A9"/>
+          <ellipse cx="88" cy="137" rx="5" ry="6" fill="#F5D0A9"/>
+          <path d="M40 128 L80 128 L78 170 L63 170 L60 148 L57 170 L42 170 Z" fill="#2A4A7A"/>
+          <rect x="42" y="168" width="16" height="55" rx="8" fill="#F5D0A9"/>
+          <rect x="62" y="168" width="16" height="55" rx="8" fill="#F5D0A9"/>
+          <rect x="44" y="210" width="13" height="30" rx="6" fill="#F5D0A9"/>
+          <rect x="63" y="210" width="13" height="30" rx="6" fill="#F5D0A9"/>
+          <rect x="41" y="238" width="19" height="10" rx="4" fill="#444"/>
+          <rect x="60" y="238" width="19" height="10" rx="4" fill="#444"/>
+        </>
+      )}
+      {avatarLevel === 3 && (
+        <>
+          <ellipse cx="60" cy="28" rx="14" ry="17" fill="#F0C89E"/>
+          <ellipse cx="60" cy="14" rx="15" ry="12" fill="#3A2A1A"/>
+          <circle cx="53" cy="30" r="1.5" fill="#2D1B0E"/>
+          <circle cx="67" cy="30" r="1.5" fill="#2D1B0E"/>
+          <path d="M55 37 Q60 41 65 37" stroke="#2D1B0E" strokeWidth="1.2" fill="none"/>
+          <rect x="52" y="44" width="16" height="10" fill="#F0C89E"/>
+          <rect x="48" y="46" width="6" height="8" rx="3" fill="#E8BB90"/>
+          <rect x="66" y="46" width="6" height="8" rx="3" fill="#E8BB90"/>
+          <path d="M32 54 L88 54 L82 130 L38 130 Z" fill="#F0C89E"/>
+          <path d="M42 60 Q51 72 60 66 Q69 72 78 60" stroke="#C9925A" strokeWidth="1.2" fill="none"/>
+          <ellipse cx="50" cy="66" rx="10" ry="6" fill="#E8BB90"/>
+          <ellipse cx="70" cy="66" rx="10" ry="6" fill="#E8BB90"/>
+          <line x1="60" y1="76" x2="60" y2="125" stroke="#C9925A" strokeWidth="1"/>
+          <line x1="48" y1="85" x2="72" y2="85" stroke="#C9925A" strokeWidth="0.6"/>
+          <line x1="49" y1="97" x2="71" y2="97" stroke="#C9925A" strokeWidth="0.6"/>
+          <line x1="50" y1="109" x2="70" y2="109" stroke="#C9925A" strokeWidth="0.6"/>
+          <ellipse cx="30" cy="58" rx="11" ry="12" fill="#F0C89E"/>
+          <ellipse cx="90" cy="58" rx="11" ry="12" fill="#F0C89E"/>
+          <ellipse cx="30" cy="58" rx="8" ry="9" fill="#E8BB90"/>
+          <ellipse cx="90" cy="58" rx="8" ry="9" fill="#E8BB90"/>
+          <rect x="20" y="62" width="16" height="42" rx="8" fill="#F0C89E"/>
+          <rect x="84" y="62" width="16" height="42" rx="8" fill="#F0C89E"/>
+          <ellipse cx="28" cy="78" rx="9" ry="14" fill="#E8BB90"/>
+          <ellipse cx="92" cy="78" rx="9" ry="14" fill="#E8BB90"/>
+          <rect x="24" y="102" width="12" height="35" rx="6" fill="#F0C89E"/>
+          <rect x="84" y="102" width="12" height="35" rx="6" fill="#F0C89E"/>
+          <ellipse cx="30" cy="139" rx="6" ry="6" fill="#F0C89E"/>
+          <ellipse cx="90" cy="139" rx="6" ry="6" fill="#F0C89E"/>
+          <path d="M38 128 L82 128 L80 170 L64 170 L60 150 L56 170 L40 170 Z" fill="#2A4A7A"/>
+          <rect x="40" y="168" width="18" height="55" rx="9" fill="#F0C89E"/>
+          <rect x="62" y="168" width="18" height="55" rx="9" fill="#F0C89E"/>
+          <ellipse cx="49" cy="188" rx="10" ry="18" fill="#E8BB90"/>
+          <ellipse cx="71" cy="188" rx="10" ry="18" fill="#E8BB90"/>
+          <rect x="43" y="212" width="14" height="28" rx="7" fill="#F0C89E"/>
+          <rect x="63" y="212" width="14" height="28" rx="7" fill="#F0C89E"/>
+          <rect x="39" y="238" width="21" height="10" rx="4" fill="#444"/>
+          <rect x="60" y="238" width="21" height="10" rx="4" fill="#444"/>
+        </>
+      )}
+      {avatarLevel === 4 && (
+        <>
+          <ellipse cx="60" cy="28" rx="14" ry="17" fill="#E8BB90"/>
+          <ellipse cx="60" cy="14" rx="15" ry="12" fill="#3A2A1A"/>
+          <circle cx="53" cy="30" r="1.5" fill="#2D1B0E"/>
+          <circle cx="67" cy="30" r="1.5" fill="#2D1B0E"/>
+          <path d="M55 37 Q60 41 65 37" stroke="#2D1B0E" strokeWidth="1.2" fill="none"/>
+          <rect x="48" y="44" width="24" height="10" fill="#E8BB90"/>
+          <path d="M40 54 Q50 44 60 48 Q70 44 80 54" fill="#DEB080"/>
+          <path d="M26 54 L94 54 L84 130 L36 130 Z" fill="#E8BB90"/>
+          <ellipse cx="32" cy="85" rx="8" ry="25" fill="#DEB080"/>
+          <ellipse cx="88" cy="85" rx="8" ry="25" fill="#DEB080"/>
+          <ellipse cx="48" cy="66" rx="14" ry="9" fill="#DEB080"/>
+          <ellipse cx="72" cy="66" rx="14" ry="9" fill="#DEB080"/>
+          <path d="M40 60 Q50 74 60 67 Q70 74 80 60" stroke="#B8804A" strokeWidth="1.5" fill="none"/>
+          <line x1="60" y1="78" x2="60" y2="125" stroke="#B8804A" strokeWidth="1.2"/>
+          <line x1="46" y1="86" x2="74" y2="86" stroke="#B8804A" strokeWidth="0.8"/>
+          <line x1="47" y1="97" x2="73" y2="97" stroke="#B8804A" strokeWidth="0.8"/>
+          <line x1="48" y1="108" x2="72" y2="108" stroke="#B8804A" strokeWidth="0.8"/>
+          <line x1="49" y1="119" x2="71" y2="119" stroke="#B8804A" strokeWidth="0.8"/>
+          <ellipse cx="24" cy="58" rx="14" ry="14" fill="#E8BB90"/>
+          <ellipse cx="96" cy="58" rx="14" ry="14" fill="#E8BB90"/>
+          <ellipse cx="24" cy="58" rx="10" ry="10" fill="#DEB080"/>
+          <ellipse cx="96" cy="58" rx="10" ry="10" fill="#DEB080"/>
+          <rect x="12" y="64" width="20" height="44" rx="10" fill="#E8BB90"/>
+          <rect x="88" y="64" width="20" height="44" rx="10" fill="#E8BB90"/>
+          <ellipse cx="22" cy="80" rx="12" ry="16" fill="#DEB080"/>
+          <ellipse cx="98" cy="80" rx="12" ry="16" fill="#DEB080"/>
+          <path d="M18 72 L22 85 L19 95" stroke="#C9925A" strokeWidth="0.6" fill="none"/>
+          <path d="M102 72 L98 85 L101 95" stroke="#C9925A" strokeWidth="0.6" fill="none"/>
+          <rect x="18" y="106" width="14" height="34" rx="7" fill="#E8BB90"/>
+          <rect x="88" y="106" width="14" height="34" rx="7" fill="#E8BB90"/>
+          <ellipse cx="25" cy="142" rx="7" ry="7" fill="#E8BB90"/>
+          <ellipse cx="95" cy="142" rx="7" ry="7" fill="#E8BB90"/>
+          <path d="M36 128 L84 128 L82 170 L65 170 L60 152 L55 170 L38 170 Z" fill="#2A4A7A"/>
+          <rect x="36" y="168" width="22" height="55" rx="11" fill="#E8BB90"/>
+          <rect x="62" y="168" width="22" height="55" rx="11" fill="#E8BB90"/>
+          <ellipse cx="47" cy="190" rx="13" ry="20" fill="#DEB080"/>
+          <ellipse cx="73" cy="190" rx="13" ry="20" fill="#DEB080"/>
+          <rect x="40" y="214" width="16" height="28" rx="8" fill="#E8BB90"/>
+          <rect x="64" y="214" width="16" height="28" rx="8" fill="#E8BB90"/>
+          <rect x="36" y="238" width="24" height="10" rx="4" fill="#444"/>
+          <rect x="60" y="238" width="24" height="10" rx="4" fill="#444"/>
+        </>
+      )}
+      {avatarLevel === 5 && (
+        <>
+          <ellipse cx="60" cy="28" rx="14" ry="17" fill="#D4A060"/>
+          <ellipse cx="60" cy="14" rx="15" ry="12" fill="#3A2A1A"/>
+          <circle cx="53" cy="30" r="1.5" fill="#2D1B0E"/>
+          <circle cx="67" cy="30" r="1.5" fill="#2D1B0E"/>
+          <path d="M55 37 Q60 41 65 37" stroke="#2D1B0E" strokeWidth="1.2" fill="none"/>
+          <rect x="44" y="44" width="32" height="10" fill="#D4A060"/>
+          <path d="M34 54 Q47 38 60 46 Q73 38 86 54" fill="#C08848"/>
+          <path d="M18 54 L102 54 L86 130 L34 130 Z" fill="#D4A060"/>
+          <ellipse cx="24" cy="82" rx="12" ry="30" fill="#C08848"/>
+          <ellipse cx="96" cy="82" rx="12" ry="30" fill="#C08848"/>
+          <ellipse cx="46" cy="66" rx="18" ry="12" fill="#C08848"/>
+          <ellipse cx="74" cy="66" rx="18" ry="12" fill="#C08848"/>
+          <path d="M34 58 Q47 78 60 68 Q73 78 86 58" stroke="#A07040" strokeWidth="2" fill="none"/>
+          <path d="M38 64 L50 68" stroke="#A07040" strokeWidth="0.5"/>
+          <path d="M82 64 L70 68" stroke="#A07040" strokeWidth="0.5"/>
+          <path d="M40 68 L52 72" stroke="#A07040" strokeWidth="0.5"/>
+          <path d="M80 68 L68 72" stroke="#A07040" strokeWidth="0.5"/>
+          <line x1="60" y1="80" x2="60" y2="125" stroke="#A07040" strokeWidth="1.5"/>
+          <line x1="44" y1="86" x2="76" y2="86" stroke="#A07040" strokeWidth="1"/>
+          <line x1="45" y1="96" x2="75" y2="96" stroke="#A07040" strokeWidth="1"/>
+          <line x1="46" y1="106" x2="74" y2="106" stroke="#A07040" strokeWidth="1"/>
+          <line x1="47" y1="116" x2="73" y2="116" stroke="#A07040" strokeWidth="1"/>
+          <path d="M38 85 L44 90 L42 100 L38 95" fill="#C08848"/>
+          <path d="M82 85 L76 90 L78 100 L82 95" fill="#C08848"/>
+          <ellipse cx="16" cy="58" rx="16" ry="16" fill="#D4A060"/>
+          <ellipse cx="104" cy="58" rx="16" ry="16" fill="#D4A060"/>
+          <ellipse cx="16" cy="58" rx="12" ry="12" fill="#C08848"/>
+          <ellipse cx="104" cy="58" rx="12" ry="12" fill="#C08848"/>
+          <path d="M10 52 L16 62" stroke="#A07040" strokeWidth="0.5"/>
+          <path d="M110 52 L104 62" stroke="#A07040" strokeWidth="0.5"/>
+          <rect x="4" y="66" width="24" height="46" rx="12" fill="#D4A060"/>
+          <rect x="92" y="66" width="24" height="46" rx="12" fill="#D4A060"/>
+          <ellipse cx="16" cy="82" rx="14" ry="18" fill="#C08848"/>
+          <ellipse cx="104" cy="82" rx="14" ry="18" fill="#C08848"/>
+          <path d="M8 72 L14 88 L10 100" stroke="#A07040" strokeWidth="0.8" fill="none"/>
+          <path d="M112 72 L106 88 L110 100" stroke="#A07040" strokeWidth="0.8" fill="none"/>
+          <path d="M12 76 L16 82" stroke="#A07040" strokeWidth="0.5" fill="none"/>
+          <path d="M108 76 L104 82" stroke="#A07040" strokeWidth="0.5" fill="none"/>
+          <rect x="10" y="110" width="16" height="34" rx="8" fill="#D4A060"/>
+          <rect x="94" y="110" width="16" height="34" rx="8" fill="#D4A060"/>
+          <ellipse cx="18" cy="146" rx="8" ry="7" fill="#D4A060"/>
+          <ellipse cx="102" cy="146" rx="8" ry="7" fill="#D4A060"/>
+          <path d="M34 128 L86 128 L84 170 L66 170 L60 154 L54 170 L36 170 Z" fill="#2A4A7A"/>
+          <rect x="34" y="168" width="24" height="55" rx="12" fill="#D4A060"/>
+          <rect x="62" y="168" width="24" height="55" rx="12" fill="#D4A060"/>
+          <ellipse cx="46" cy="190" rx="15" ry="22" fill="#C08848"/>
+          <ellipse cx="74" cy="190" rx="15" ry="22" fill="#C08848"/>
+          <path d="M42 178 L46 205" stroke="#A07040" strokeWidth="0.6"/>
+          <path d="M78 178 L74 205" stroke="#A07040" strokeWidth="0.6"/>
+          <ellipse cx="46" cy="224" rx="10" ry="16" fill="#C08848"/>
+          <ellipse cx="74" cy="224" rx="10" ry="16" fill="#C08848"/>
+          <rect x="38" y="214" width="18" height="28" rx="9" fill="#D4A060"/>
+          <rect x="64" y="214" width="18" height="28" rx="9" fill="#D4A060"/>
+          <rect x="34" y="238" width="26" height="10" rx="4" fill="#444"/>
+          <rect x="60" y="238" width="26" height="10" rx="4" fill="#444"/>
+        </>
+      )}
+    </svg>
+  )
+}
+
+export default function AvatarSection({
+  level,
+  characterName: _characterName,
+  selectedCharacter,
+  monthlyCharacterLevel,
+  weight,
+  height,
+  xp,
+  nextLevelXp,
+  onSaveProfile,
+}: AvatarSectionProps) {
+  const { t } = useTranslation()
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [draftWeight, setDraftWeight] = useState(String(weight))
+  const [draftHeight, setDraftHeight] = useState(String(height))
+  const [motivationQuote] = useState(() => MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)])
+  const characterImage = useMemo(() => getCharacterGrowthImage(selectedCharacter, monthlyCharacterLevel), [selectedCharacter, monthlyCharacterLevel])
+
+  const openEditModal = () => {
+    setDraftWeight(String(weight))
+    setDraftHeight(String(height))
+    setIsEditOpen(true)
+  }
+
+  const handleSave = () => {
+    const nextWeight = Number(draftWeight)
+    const nextHeight = Number(draftHeight)
+
+    if (!Number.isFinite(nextWeight) || !Number.isFinite(nextHeight)) {
+      return
+    }
+
+    onSaveProfile({
+      weight: Math.max(0, Math.round(nextWeight)),
+      height: Math.max(0, Math.round(nextHeight)),
+    })
+    setIsEditOpen(false)
+  }
+
+  return (
+    <section
+      className="relative overflow-hidden rounded-b-[2rem] bg-[#FFFBEA] px-5 pb-6 pt-5 transition-colors duration-200 dark:bg-[#0B0B0B]"
+      style={{
+        minHeight: "320px",
+      }}
+      aria-label={t("home.characterAria")}
+    >
+      <div
+          className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 34%), radial-gradient(circle at top right, rgba(96,165,250,0.22), transparent 28%), linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
+        }}
+      />
+      <motion.div
+        className="relative z-10"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#D4A900] shadow-[0_14px_30px_rgba(37,99,235,0.28)]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 2L19 5V11C19 15.418 16.105 19.216 12 20.5C7.895 19.216 5 15.418 5 11V5L12 2Z" fill="white" fillOpacity="0.18"/>
+                <path d="M12 4.2L17 6.3V10.8C17 14.1 14.95 17.02 12 18.1C9.05 17.02 7 14.1 7 10.8V6.3L12 4.2Z" stroke="white" strokeWidth="1.6"/>
+                <path d="M8.5 11.5H15.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M12 8V15" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <div className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-[#D4A900]">
+                {t("common.appName")}
+              </div>
+            <div className="text-sm font-medium text-[#64748b] dark:text-[#CBD5E1]">{t("home.heroSubtitle")}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#1e3a8a] shadow-[0_12px_24px_rgba(15,23,42,0.08)] dark:bg-[#171717] dark:text-[#F8FAFC]"
+              aria-label={t("home.notifications")}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 4C9.791 4 8 5.791 8 8V9.2C8 10.18 7.682 11.133 7.094 11.917L6 13.375V15H18V13.375L16.906 11.917C16.318 11.133 16 10.18 16 9.2V8C16 5.791 14.209 4 12 4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                <path d="M10 18C10.458 18.611 11.187 19 12 19C12.813 19 13.542 18.611 14 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#FFD400] ring-2 ring-white" />
+            </button>
+            <button
+              type="button"
+              onClick={openEditModal}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#bfdbfe,#FFE066)] text-sm font-bold text-[#0f172a] shadow-[0_12px_24px_rgba(37,99,235,0.22)]"
+              aria-label={t("home.editProfile")}
+            >
+              {level}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid items-end gap-2 md:grid-cols-[1.05fr_0.95fr]">
+          <div className="relative flex min-h-[220px] items-end justify-center overflow-hidden rounded-[2rem] bg-transparent px-2 pt-14 md:pt-4">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url(${gymBackground})` }}
+              aria-hidden="true"
+            />
+            <div
+              className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.42)_0%,rgba(15,23,42,0.58)_100%)]"
+              aria-hidden="true"
+            />
+            <motion.div
+              className="absolute left-1/2 top-2 z-20 w-[min(190px,calc(100%-2rem))] -translate-x-1/2 rounded-[1.25rem] border border-[#FFF1A8] bg-white px-3 py-2 text-left shadow-[0_18px_40px_rgba(37,99,235,0.16)] md:left-auto md:right-2 md:top-0 md:w-[190px] md:translate-x-0 dark:border-[#D4A900]/20 dark:bg-[#171717]"
+              initial={{ opacity: 0, y: 10, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" }}
+            >
+              <div className="text-[0.56rem] font-semibold uppercase tracking-[0.2em] text-[#FFE066]">
+                Motivation
+              </div>
+              <p className="mt-1 text-[0.8rem] font-semibold leading-5 text-[#1e3a8a] dark:text-[#F8FAFC]">
+                {motivationQuote}
+              </p>
+              <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 rounded-[0.3rem] border-b border-r border-[#FFF1A8] bg-white md:left-auto md:right-8 md:translate-x-0 dark:border-[#D4A900]/20 dark:bg-[#171717]" />
+            </motion.div>
+            <img
+              src={characterImage}
+              alt=""
+              className="relative z-10 max-h-[156px] w-auto object-contain drop-shadow-[0_18px_30px_rgba(37,99,235,0.22)]"
+            />
+          </div>
+
+          <div className="relative rounded-[2rem] bg-white/88 p-5 shadow-[0_24px_48px_rgba(37,99,235,0.12)] backdrop-blur dark:bg-[#171717]">
+            <div className="text-xs font-semibold uppercase tracking-[0.28em] text-[#FFE066]">
+              {t("common.levelShort")}
+            </div>
+            <div className="mt-1 text-5xl font-black leading-none tracking-[-0.04em] text-[#0f172a] dark:text-[#F8FAFC]">
+              {level}
+            </div>
+            <p className="mt-3 max-w-[14rem] text-sm font-semibold uppercase tracking-[0.18em] text-[#334155] dark:text-[#CBD5E1]">
+              {t("home.heroMessage")}
+            </p>
+            <div className="mt-5 rounded-[1.5rem] bg-[#FFF8D6] p-4 dark:bg-[#111111]">
+              <div className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-[#64748b] dark:text-[#CBD5E1]">
+                <span>{t("home.profileStats")}</span>
+                <span>{xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-[#0f172a] dark:text-[#F8FAFC]">
+                <div>
+                  <div className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#64748b] dark:text-[#CBD5E1]">{t("home.weight")}</div>
+                  <div className="mt-1 text-lg font-bold">{weight}<span className="ml-1 text-sm text-[#64748b] dark:text-[#CBD5E1]">kg</span></div>
+                </div>
+                <div>
+                  <div className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#64748b] dark:text-[#CBD5E1]">{t("home.height")}</div>
+                  <div className="mt-1 text-lg font-bold">{height}<span className="ml-1 text-sm text-[#64748b] dark:text-[#CBD5E1]">cm</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {isEditOpen && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 px-6">
+          <div
+            className="w-full max-w-[280px] rounded-[1.75rem] bg-white p-5 shadow-[0_24px_48px_rgba(15,23,42,0.24)]"
+            style={{
+              border: "1px solid rgba(148, 163, 184, 0.2)",
+            }}
+          >
+            <div className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#1d4ed8]">{t("home.editProfile")}</div>
+            <div className="space-y-3">
+              <label className="block">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t("home.weight")}</div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={draftWeight}
+                  onChange={(event) => setDraftWeight(event.target.value)}
+                  className="w-full rounded-2xl border border-[#bfdbfe] bg-[#f8fbff] px-3 py-3 text-sm font-semibold text-[#0f172a] outline-none"
+                />
+              </label>
+              <label className="block">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t("home.height")}</div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={draftHeight}
+                  onChange={(event) => setDraftHeight(event.target.value)}
+                  className="w-full rounded-2xl border border-[#bfdbfe] bg-[#f8fbff] px-3 py-3 text-sm font-semibold text-[#0f172a] outline-none"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(false)}
+                className="rounded-full bg-[#e2e8f0] px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#334155]"
+              >
+                {t("common.close")}
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="rounded-full bg-[#D4A900] px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-[0_12px_24px_rgba(37,99,235,0.28)]"
+              >
+                {t("common.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+

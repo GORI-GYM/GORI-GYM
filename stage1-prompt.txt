@@ -1,0 +1,47 @@
+You are generating 4 style direction comps for a mobile fitness RPG app called "Gym Quest".
+
+This is an RPG-style fitness app where users record workouts (exercises, weight, reps, sets, duration), earn XP, level up, and watch their avatar's body grow based on training. Target audience: young men. The app should feel like an RPG game - exciting, motivating, and gamified.
+
+DO NOT write any code. Generate image-only style comps.
+
+Load the create-image skill first.
+
+Then generate exactly 4 distinct style direction comps in parallel using 4 separate bash tool calls, each with:
+verdent-image generate --use-styles --title "<name>" --palette "<bg>,<ink>,<accent>" --n 1 --prompt "..."
+
+Each comp should show the app's PRIMARY SCREEN (home/dashboard) as a mobile app interface with: avatar/character display, XP bar, level indicator, training log entry point, streak counter.
+
+The 4 directions to explore:
+
+1. DARK WARRIOR - Dark, intense gaming aesthetic.
+   --title "Dark Warrior" --palette "#0D0D0D,#C8C8C8,#39FF14"
+   Deep black background (#0D0D0D), steel gray text (#C8C8C8), neon green accent (#39FF14). Angular, aggressive layout. Condensed bold type. Full-bleed dark mobile screen. HUD-like interface elements. Military/warrior RPG vibe.
+
+2. PIXEL QUEST - Retro pixel-art RPG inspired.
+   --title "Pixel Quest" --palette "#F5E6C8,#2D1B0E,#FFB800"
+   Warm parchment background (#F5E6C8), dark brown ink (#2D1B0E), gold accent (#FFB800). Pixel-art character, classic RPG menu layout. Display-board presentation on a clean backdrop. Nostalgic 16-bit RPG feel.
+
+3. CLEAN ATHLETE - Modern, premium sports app feel.
+   --title "Clean Athlete" --palette "#FFFFFF,#1A1F36,#3B82F6"
+   Pure white background (#FFFFFF), deep navy text (#1A1F36), electric blue accent (#3B82F6). Clean cards, generous whitespace, bold sans-serif headlines. Cropped detail focusing on the hero section. Think Nike Training Club meets RPG.
+
+4. NEO TOKYO - Cyberpunk anime-inspired gaming UI.
+   --title "Neo Tokyo" --palette "#13001A,#FF2D78,#00E5FF"
+   Deep purple-black background (#13001A), hot pink accent (#FF2D78), cyan highlights (#00E5FF). Anime-styled character, dynamic diagonal composition. Full-bleed mobile screen. Cyberpunk RPG aesthetic.
+
+For each comp prompt, follow this structure:
+- SUBJECT: Mobile app home screen for RPG fitness app "Gym Quest", primary action is logging a workout
+- COMPOSITION: Layout details specific to that direction
+- TYPE SYSTEM: Specific typefaces and sizes
+- COLOR SYSTEM: The 3 exact hex colors as background/ink/accent - express in prompt AND --palette. These colors are for coloring UI elements; do NOT render color swatches, palette blocks, hex labels, or color chips anywhere in the image.
+- TEXTURE / MATERIAL
+- LIGHTING
+- AVOID: purple-to-blue gradients, AI-stock illustrations, faceless silhouettes, emoji-as-icon, glassmorphism (unless direction calls for it), uniform corner rounding, same padding rhythm, no color swatch strips or hex labels anywhere in the image
+
+After generation, copy all 4 images to C:\Users\knuma\Projects\gym-quest\verdent-design\stage1\ with names:
+- comp-1-dark-warrior.png
+- comp-2-pixel-quest.png
+- comp-3-clean-athlete.png
+- comp-4-neo-tokyo.png
+
+Then ls the stage1 folder to verify all files exist.
