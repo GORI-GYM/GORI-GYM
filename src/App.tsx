@@ -43,6 +43,12 @@ import {
   type DailyMissionHistoryEntry,
   type DailyMissionSettings,
 } from "@/utils/dailyMission"
+import {
+  getStoredGorillaEmotionState,
+  persistGorillaEmotionState,
+  resolveGorillaEmotion,
+  type GorillaEmotionState,
+} from "@/utils/gorillaEmotion"
 
 const THEME_STORAGE_KEY = "gym-quest-theme"
 const ROUTINES_STORAGE_KEY = "gym-quest-routines"
@@ -175,8 +181,6 @@ interface HomeTrainingSummary {
   totalWeight: number
 }
 
-type GorillaMood = "praise" | "taunt"
-
 interface MonthlyCharacterHistoryEntry {
   monthKey: string
   monthLabel: string
@@ -190,6 +194,13 @@ interface StoredMonthlyCharacterHistoryEntry {
   maxLevel: number
   totalXP: number
   trainingDays: number
+}
+
+interface GorillaCelebrationState {
+  xpGain: number
+  levelReached: number
+  monthlyLevelReached: number
+  isEvolution: boolean
 }
 
 function getTodayTrainingSummary(entries: TrainingEntry[]): HomeTrainingSummary | null {
@@ -210,8 +221,33 @@ function getTodayTrainingSummary(entries: TrainingEntry[]): HomeTrainingSummary 
   }
 }
 
-function getTodayTrainingStatus(entries: TrainingEntry[]): GorillaMood {
-  return entries.some((entry) => entry.dateLabel === "today") ? "praise" : "taunt"
+function getLatestTrainingAt(entries: TrainingEntry[]) {
+  const now = new Date()
+  const datedEntries = entries
+    .map((entry) => {
+      if (entry.dateKey) {
+        return new Date(`${entry.dateKey}T12:00:00`)
+      }
+
+      const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      switch (entry.dateLabel) {
+        case "today":
+          return baseDate
+        case "yesterday":
+          return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 1)
+        case "daysAgo":
+          return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - (entry.daysAgo ?? 0))
+        case "weekAgo":
+          return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 7)
+      }
+    })
+    .filter((value): value is Date => value instanceof Date && !Number.isNaN(value.getTime()))
+
+  if (datedEntries.length === 0) {
+    return null
+  }
+
+  return datedEntries.sort((left, right) => right.getTime() - left.getTime())[0].toISOString()
 }
 
 function getNextLevelXp(level: number) {
@@ -305,10 +341,11 @@ function AppContent() {
   const [dailyMissionDay, setDailyMissionDay] = useState<DailyMissionDay>(getStoredDailyMissionDay)
   const [dailyMissionHistory, setDailyMissionHistory] = useState<DailyMissionHistoryEntry[]>(getStoredDailyMissionHistory)
   const [showWeeklyGoalModal, setShowWeeklyGoalModal] = useState(false)
+  const [gorillaEmotionState, setGorillaEmotionState] = useState<GorillaEmotionState>(getStoredGorillaEmotionState)
+  const [gorillaCelebration, setGorillaCelebration] = useState<GorillaCelebrationState | null>(null)
   const level = useMemo(() => getLevelFromXP(xp), [xp])
   const nextLevelXp = useMemo(() => getNextLevelXp(level), [level])
   const todayTrainingSummary = useMemo(() => getTodayTrainingSummary(trainingEntries), [trainingEntries])
-  const todayTrainingStatus = useMemo(() => getTodayTrainingStatus(trainingEntries), [trainingEntries])
   const computedMonthlyHistory = useMemo(() => getMonthlyCharacterHistory(trainingEntries), [trainingEntries])
   const [storedMonthlyHistory, setStoredMonthlyHistory] = useState<Record<string, StoredMonthlyCharacterHistoryEntry>>(getStoredMonthlyCharacterHistory)
   const resolvedMonthlyCharacterProgress = useMemo(() => resolveMonthlyCharacterProgress(monthlyCharacterProgress), [monthlyCharacterProgress])
@@ -370,6 +407,12 @@ function AppContent() {
   }, [resolvedMonthlyCharacterProgress, monthlyCharacterProgress])
 
   useEffect(() => {
+    const nextState = resolveGorillaEmotion(getLatestTrainingAt(trainingEntries), resolvedWeeklyProgress.currentStreak)
+    setGorillaEmotionState(nextState)
+    persistGorillaEmotionState(nextState)
+  }, [resolvedWeeklyProgress.currentStreak, trainingEntries])
+
+  useEffect(() => {
     persistDailyMissionSettings(dailyMissionSettings)
   }, [dailyMissionSettings])
 
@@ -396,15 +439,32 @@ function AppContent() {
   useEffect(() => {
     if (level > previousLevelRef.current) {
       setLevelUpOverlayLevel(level)
+      if ([5, 10, 15, 20].includes(level)) {
+        setGorillaCelebration((current) => current ?? {
+          xpGain: 0,
+          levelReached: level,
+          monthlyLevelReached: monthlyCharacterLevel,
+          isEvolution: true,
+        })
+      }
     }
     previousLevelRef.current = level
-  }, [level])
+  }, [level, monthlyCharacterLevel])
 
   useEffect(() => {
     if (levelUpOverlayLevel === null) return
     const timer = window.setTimeout(() => setLevelUpOverlayLevel(null), 3000)
     return () => window.clearTimeout(timer)
   }, [levelUpOverlayLevel])
+
+  useEffect(() => {
+    if (gorillaCelebration === null) {
+      return
+    }
+
+    const timer = window.setTimeout(() => setGorillaCelebration(null), gorillaCelebration.isEvolution ? 2200 : 1500)
+    return () => window.clearTimeout(timer)
+  }, [gorillaCelebration])
 
   useEffect(() => {
     if (!user) {
@@ -591,6 +651,9 @@ function AppContent() {
 
   const handleTrainingSaved = (targetDateKey: string) => {
     const result = applyTrainingCompletion(trainingEntries, resolvedWeeklyProgress, targetDateKey)
+    const xpGain = result.sessionXp + result.bonusXp
+    const nextLevel = getLevelFromXP(xp + xpGain)
+    const isEvolution = [5, 10, 15, 20].includes(nextLevel) && nextLevel > level
     setWeeklyProgress(result.nextState)
     setMonthlyCharacterProgress((current) => resolveMonthlyCharacterProgress({
       monthlyXP: current.monthlyXP + result.sessionXp + result.bonusXp,
@@ -602,6 +665,12 @@ function AppContent() {
         multiplierApplied: weeklyProgressSummary.xpMultiplier,
       },
     }))
+    setGorillaCelebration({
+      xpGain,
+      levelReached: nextLevel,
+      monthlyLevelReached: monthlyCharacterLevel,
+      isEvolution,
+    })
   }
 
   const handleReturnFromWorkout = () => {
@@ -738,7 +807,8 @@ function AppContent() {
           characterName={PLAYER.name}
           selectedCharacter={selectedCharacter}
           monthlyCharacterLevel={monthlyCharacterLevel}
-          todayTrainingStatus={todayTrainingStatus}
+          gorillaEmotion={gorillaEmotionState.emotion}
+          skippedDays={gorillaEmotionState.skippedDays}
           weight={profile.weight}
           height={profile.height}
           xp={xp}
@@ -830,6 +900,104 @@ function AppContent() {
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} socialBadgeCount={pendingFriendRequestCount} />
 
         <AnimatePresence>
+          {gorillaCelebration ? (
+            <motion.div
+              className="pointer-events-none absolute inset-0 z-[70] overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div
+                className={`absolute inset-0 ${
+                  gorillaCelebration.isEvolution
+                    ? "bg-[radial-gradient(circle_at_center,rgba(255,215,64,0.42)_0%,rgba(245,166,35,0.28)_24%,rgba(10,10,10,0.96)_72%)]"
+                    : "bg-[radial-gradient(circle_at_center,rgba(245,166,35,0.24)_0%,rgba(10,10,10,0.92)_68%)]"
+                }`}
+              />
+              {Array.from({ length: gorillaCelebration.isEvolution ? 48 : 32 }, (_, index) => (
+                <span
+                  key={`gorilla-celebration-${index}`}
+                  className={`training-confetti ${gorillaCelebration.isEvolution ? "training-confetti--burst" : ""}`}
+                  style={{
+                    left: `${(index / (gorillaCelebration.isEvolution ? 48 : 32)) * 100}%`,
+                    background: `linear-gradient(180deg, ${["#F5A623", "#FFD700", "#FFFFFF", "#FF6B35"][index % 4]}, rgba(255,255,255,0.92))`,
+                    animationDelay: `${(index % 8) * 0.04}s`,
+                    animationDuration: `${gorillaCelebration.isEvolution ? 2.2 : 1.6 + (index % 5) * 0.12}s`,
+                  }}
+                />
+              ))}
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+                {gorillaCelebration.isEvolution ? (
+                  <>
+                    <motion.div
+                      className="absolute h-[24rem] w-[24rem] rounded-full border border-[#FFD700]/35"
+                      animate={{ scale: [0.72, 1.18, 1.02], opacity: [0.18, 0.72, 0.24], rotate: [0, 18, 0] }}
+                      transition={{ duration: 1.8, ease: "easeOut" }}
+                    />
+                    <motion.div
+                      className="absolute h-[18rem] w-[18rem] rounded-full border border-white/25"
+                      animate={{ scale: [0.6, 1.08, 0.94], opacity: [0.12, 0.58, 0.18] }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                    />
+                  </>
+                ) : null}
+                <motion.img
+                  src={getCharacterGrowthImage(selectedCharacter, gorillaCelebration.isEvolution ? Math.min(20, gorillaCelebration.levelReached) : monthlyCharacterLevel)}
+                  alt=""
+                  className={`relative z-10 w-[220px] max-w-[72vw] ${
+                    gorillaCelebration.isEvolution
+                      ? "drop-shadow-[0_0_56px_rgba(255,215,64,0.92)]"
+                      : "drop-shadow-[0_0_42px_rgba(245,166,35,0.72)]"
+                  }`}
+                  initial={{ scale: 0.72, y: 24, opacity: 0.4 }}
+                  animate={{
+                    scale: gorillaCelebration.isEvolution ? [0.72, 0.92, 1.18, 1.02] : [0.72, 1.08, 0.98, 1.04],
+                    y: gorillaCelebration.isEvolution ? [24, 8, -24, -8] : [24, -18, 0, -8],
+                    rotate: gorillaCelebration.isEvolution ? [0, -4, 4, 0] : 0,
+                    opacity: [0.4, 1, 1, 1],
+                  }}
+                  transition={{ duration: gorillaCelebration.isEvolution ? 1.7 : 1.2, times: [0, 0.35, 0.7, 1] }}
+                />
+                <motion.div
+                  className={`mt-5 font-black tracking-[0.08em] ${
+                    gorillaCelebration.isEvolution ? "text-5xl text-[#FFF4B8] md:text-7xl" : "text-4xl text-white md:text-6xl"
+                  }`}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: [0.8, 1.12, 1], opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {gorillaCelebration.isEvolution ? "進化覚醒！！" : "ウホホ！！"}
+                </motion.div>
+                <motion.div
+                  className={`mt-3 rounded-full px-5 py-2 text-lg font-bold backdrop-blur ${
+                    gorillaCelebration.isEvolution
+                      ? "border border-[#FFD700] bg-[#0a0a0a]/55 text-[#FFE082] shadow-[0_0_36px_rgba(255,215,64,0.42)]"
+                      : "border border-[#F5A623] bg-white/10 text-[#FFE082]"
+                  }`}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.35 }}
+                >
+                  +{gorillaCelebration.xpGain} XP
+                </motion.div>
+                {gorillaCelebration.isEvolution ? (
+                  <motion.div
+                    className="mt-4 rounded-[1.5rem] border border-[#FFD700] bg-[#0a0a0a]/72 px-6 py-4 text-[#FFF4B8] shadow-[0_0_40px_rgba(245,166,35,0.45)]"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.45 }}
+                  >
+                    <div className="text-xs font-semibold uppercase tracking-[0.35em] text-[#F5A623]">GORILLA EVOLUTION</div>
+                    <div className="mt-2 text-2xl font-black">Lv.{gorillaCelebration.levelReached} 到達！</div>
+                    <div className="mt-1 text-sm font-semibold text-[#FFE9A8]">
+                      ゴールドオーラが爆発し、ゴリラが新たな段階へ進化した。
+                    </div>
+                  </motion.div>
+                ) : null}
+              </div>
+            </motion.div>
+          ) : null}
           {showSplashScreen ? (
             <motion.div
               className="absolute inset-0 z-[60] flex items-center justify-center overflow-hidden bg-[#0a0a0a]"
