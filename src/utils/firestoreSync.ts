@@ -1,4 +1,6 @@
 import {
+  addDoc,
+  arrayUnion,
   collection,
   doc,
   getCountFromServer,
@@ -8,6 +10,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   startAt,
@@ -26,6 +29,7 @@ export interface UserProfile {
   xp: number
   trainingDays: number
   friendCode?: string
+  friends?: string[]
 }
 
 interface FirestoreTrainingLog extends TrainingEntry {
@@ -45,6 +49,26 @@ export interface PublicUserProfile {
   friendCode: string
 }
 
+export interface FriendRequest {
+  id: string
+  from: string
+  to: string
+  status: "pending" | "accepted" | "rejected"
+  timestamp?: unknown
+  fromProfile?: PublicUserProfile
+}
+
+export interface FriendProfile extends PublicUserProfile {
+  trainingEntries: TrainingEntry[]
+}
+
+export interface TrainingLike {
+  id: string
+  uid: string
+  displayName: string
+  timestamp?: unknown
+}
+
 export interface SyncPayload {
   trainingEntries: TrainingEntry[]
   profile: UserProfile
@@ -56,6 +80,10 @@ function getUserDocRef(uid: string) {
 
 function getTrainingLogsCollectionRef(uid: string) {
   return collection(db, "users", uid, "trainingLogs")
+}
+
+function getFriendRequestsCollectionRef() {
+  return collection(db, "friendRequests")
 }
 
 function getTrainingEntryIdentity(entry: TrainingEntry) {
@@ -289,6 +317,16 @@ function normalizePublicUserProfile(uid: string, data: FirestoreUserProfile | un
   }
 }
 
+async function getPublicUserProfile(uid: string) {
+  const snapshot = await getDoc(getUserDocRef(uid))
+
+  if (!snapshot.exists()) {
+    return null
+  }
+
+  return normalizePublicUserProfile(uid, snapshot.data() as FirestoreUserProfile)
+}
+
 export async function searchUsers(searchTerm: string, currentUid?: string) {
   const normalizedTerm = searchTerm.trim()
 
@@ -332,4 +370,144 @@ export async function searchUsers(searchTerm: string, currentUid?: string) {
 
     return left.displayName.localeCompare(right.displayName, "ja")
   })
+}
+
+export async function sendFriendRequest(fromUid: string, toUid: string) {
+  if (fromUid === toUid) {
+    throw new Error("自分自身にはフレンドリクエストを送れません。")
+  }
+
+  const [fromSnapshot, toSnapshot] = await Promise.all([
+    getDoc(getUserDocRef(fromUid)),
+    getDoc(getUserDocRef(toUid)),
+  ])
+
+  if (!toSnapshot.exists()) {
+    throw new Error("送信先ユーザーが見つかりません。")
+  }
+
+  const fromFriends = Array.isArray(fromSnapshot.data()?.friends) ? fromSnapshot.data()?.friends as string[] : []
+  if (fromFriends.includes(toUid)) {
+    throw new Error("すでにフレンドです。")
+  }
+
+  const existingRequests = await getDocs(query(getFriendRequestsCollectionRef(), orderBy("timestamp", "desc"), limit(100)))
+  const duplicate = existingRequests.docs.find((snapshot) => {
+    const data = snapshot.data() as Omit<FriendRequest, "id">
+    return (
+      ((data.from === fromUid && data.to === toUid) || (data.from === toUid && data.to === fromUid))
+      && data.status === "pending"
+    )
+  })
+
+  if (duplicate) {
+    throw new Error("すでに保留中のフレンドリクエストがあります。")
+  }
+
+  await addDoc(getFriendRequestsCollectionRef(), {
+    from: fromUid,
+    to: toUid,
+    status: "pending",
+    timestamp: serverTimestamp(),
+  })
+}
+
+export function subscribeToPendingFriendRequestCount(uid: string, onCount: (count: number) => void, onError?: (error: FirestoreError) => void) {
+  return onSnapshot(
+    query(getFriendRequestsCollectionRef(), orderBy("timestamp", "desc"), limit(100)),
+    (snapshot) => {
+      const count = snapshot.docs.reduce((total, docSnapshot) => {
+        const data = docSnapshot.data() as Omit<FriendRequest, "id">
+        return data.to === uid && data.status === "pending" ? total + 1 : total
+      }, 0)
+      onCount(count)
+    },
+    onError,
+  )
+}
+
+export async function getIncomingFriendRequests(uid: string) {
+  const snapshot = await getDocs(query(getFriendRequestsCollectionRef(), orderBy("timestamp", "desc"), limit(100)))
+  const requests = await Promise.all(
+    snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<FriendRequest, "id">) }))
+      .filter((request) => request.to === uid && request.status === "pending")
+      .map(async (request) => ({
+        ...request,
+        fromProfile: await getPublicUserProfile(request.from),
+      })),
+  )
+
+  return requests.filter((request) => request.fromProfile) as FriendRequest[]
+}
+
+export async function respondToFriendRequest(requestId: string, action: "accepted" | "rejected") {
+  const requestRef = doc(db, "friendRequests", requestId)
+
+  await runTransaction(db, async (transaction) => {
+    const requestSnapshot = await transaction.get(requestRef)
+
+    if (!requestSnapshot.exists()) {
+      throw new Error("フレンドリクエストが見つかりません。")
+    }
+
+    const request = requestSnapshot.data() as Omit<FriendRequest, "id">
+    if (request.status !== "pending") {
+      throw new Error("このリクエストはすでに処理済みです。")
+    }
+
+    transaction.set(requestRef, { status: action }, { merge: true })
+
+    if (action === "accepted") {
+      transaction.set(getUserDocRef(request.from), { friends: arrayUnion(request.to), updatedAt: serverTimestamp() }, { merge: true })
+      transaction.set(getUserDocRef(request.to), { friends: arrayUnion(request.from), updatedAt: serverTimestamp() }, { merge: true })
+    }
+  })
+}
+
+export async function getFriends(uid: string) {
+  const userSnapshot = await getDoc(getUserDocRef(uid))
+  const friendIds = Array.isArray(userSnapshot.data()?.friends) ? userSnapshot.data()?.friends as string[] : []
+  const profiles = await Promise.all(friendIds.map((friendUid) => getPublicUserProfile(friendUid)))
+  return profiles.filter(Boolean) as PublicUserProfile[]
+}
+
+export async function getFriendProfile(friendUid: string) {
+  const [profile, trainingSnapshot] = await Promise.all([
+    getPublicUserProfile(friendUid),
+    getDocs(query(getTrainingLogsCollectionRef(friendUid), orderBy("id", "desc"), limit(20))),
+  ])
+
+  if (!profile) {
+    throw new Error("フレンド情報の取得に失敗しました。")
+  }
+
+  return {
+    ...profile,
+    trainingEntries: trainingSnapshot.docs.map((snapshot) => snapshot.data() as TrainingEntry),
+  } satisfies FriendProfile
+}
+
+export async function toggleTrainingLike(ownerUid: string, trainingEntryId: number, currentUser: Pick<PublicUserProfile, "uid" | "displayName">) {
+  const likeRef = doc(db, "users", ownerUid, "trainingLogs", String(trainingEntryId), "likes", currentUser.uid)
+  const snapshot = await getDoc(likeRef)
+
+  if (snapshot.exists()) {
+    const batch = writeBatch(db)
+    batch.delete(likeRef)
+    await batch.commit()
+    return false
+  }
+
+  await setDoc(likeRef, {
+    uid: currentUser.uid,
+    displayName: currentUser.displayName,
+    timestamp: serverTimestamp(),
+  })
+  return true
+}
+
+export async function getTrainingLikes(ownerUid: string, trainingEntryId: number) {
+  const snapshot = await getDocs(collection(db, "users", ownerUid, "trainingLogs", String(trainingEntryId), "likes"))
+  return snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<TrainingLike, "id">) }))
 }

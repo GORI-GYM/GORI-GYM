@@ -10,6 +10,7 @@ import BottomNav from "@/sections/BottomNav"
 import AuthPage from "@/sections/AuthPage"
 import CharacterPage from "@/sections/CharacterPage"
 import ProfilePage from "@/sections/ProfilePage"
+import SocialPage from "@/sections/SocialPage"
 import TrainingPage from "@/sections/TrainingPage"
 import WorkoutPage from "@/sections/WorkoutPage"
 import AchievementsPage from "@/sections/AchievementsPage"
@@ -17,7 +18,7 @@ import RoutinePage from "@/sections/RoutinePage"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
-import { mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToUserTrainingData, type UserProfile } from "@/utils/firestoreSync"
+import { mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToPendingFriendRequestCount, subscribeToUserTrainingData, type UserProfile } from "@/utils/firestoreSync"
 import { initialRoutines, type Routine } from "@/sections/routineData"
 import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMRecords, calculateBig3Records, calculateBig3OneRMRecords, type BodyPartXPMap, calculateBodyPartXPMap, calculateTotalXP, getLevelFromXP, LEVEL_THRESHOLDS, MAX_LEVEL, XP_PER_LEVEL } from "@/sections/TrainingPage"
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
@@ -342,6 +343,7 @@ function AppContent() {
   const [selectedTrainingDateKey, setSelectedTrainingDateKey] = useState<string | null>(null)
   const [selectedCharacter] = useState<CharacterId>("gorilla")
   const [levelUpOverlayLevel, setLevelUpOverlayLevel] = useState<number | null>(null)
+  const [pendingFriendRequestCount, setPendingFriendRequestCount] = useState(0)
   const level = useMemo(() => getLevelFromXP(xp), [xp])
   const nextLevelXp = useMemo(() => getNextLevelXp(level), [level])
   const todayTrainingSummary = useMemo(() => getTodayTrainingSummary(trainingEntries), [trainingEntries])
@@ -406,6 +408,15 @@ function AppContent() {
     const timer = window.setTimeout(() => setLevelUpOverlayLevel(null), 3000)
     return () => window.clearTimeout(timer)
   }, [levelUpOverlayLevel])
+
+  useEffect(() => {
+    if (!user) {
+      setPendingFriendRequestCount(0)
+      return
+    }
+
+    return subscribeToPendingFriendRequestCount(user.uid, setPendingFriendRequestCount)
+  }, [user])
 
   useEffect(() => {
     setBig3Records(calculateBig3Records(trainingEntries))
@@ -579,7 +590,12 @@ function AppContent() {
     }
 
     if (activeTab === "social") {
-      return <ProfilePage profile={userProfile} onProfileChange={setUserProfile} />
+      return (
+        <>
+          <ProfilePage profile={userProfile} onProfileChange={setUserProfile} />
+          <SocialPage profile={userProfile} />
+        </>
+      )
     }
 
     if (activeTab === "training") {
@@ -677,7 +693,7 @@ function AppContent() {
           {renderMainContent()}
         </main>
 
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} socialBadgeCount={pendingFriendRequestCount} />
 
         <AnimatePresence>
           {showSplashScreen ? (

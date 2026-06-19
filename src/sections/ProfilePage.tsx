@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
-import { ensureUserFriendCode, saveUserProfile, searchUsers, type PublicUserProfile, type UserProfile } from "@/utils/firestoreSync"
+import { ensureUserFriendCode, saveUserProfile, searchUsers, sendFriendRequest, type PublicUserProfile, type UserProfile } from "@/utils/firestoreSync"
 import { IconUsers } from "@/icons"
 
 interface ProfilePageProps {
@@ -19,6 +19,7 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
   const [searchResults, setSearchResults] = useState<PublicUserProfile[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchMessage, setSearchMessage] = useState("")
+  const [pendingRequestUid, setPendingRequestUid] = useState<string | null>(null)
 
   useEffect(() => {
     setDisplayName(profile.displayName)
@@ -115,6 +116,24 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
       setSearchMessage(error instanceof Error ? error.message : "検索に失敗しました。")
     } finally {
       setIsSearching(false)
+    }
+  }
+
+  const handleSendFriendRequest = async (targetUid: string) => {
+    if (!user) {
+      return
+    }
+
+    setPendingRequestUid(targetUid)
+    setSearchMessage("")
+
+    try {
+      await sendFriendRequest(user.uid, targetUid)
+      setSearchMessage("フレンドリクエストを送信しました。")
+    } catch (error: unknown) {
+      setSearchMessage(error instanceof Error ? error.message : "フレンドリクエストの送信に失敗しました。")
+    } finally {
+      setPendingRequestUid(null)
     }
   }
 
@@ -241,9 +260,19 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
                   <div className="text-lg font-black text-white">{result.displayName}</div>
                   <div className="mt-1 text-sm text-[#FFE7B0]">フレンドコード: {result.friendCode}</div>
                 </div>
-                <div className="rounded-2xl border border-[#F5A623]/25 bg-black/30 px-3 py-2 text-right">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-[#FFE7B0]">LEVEL</div>
-                  <div className="text-lg font-black text-[#F5A623]">Lv.{result.level}</div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="rounded-2xl border border-[#F5A623]/25 bg-black/30 px-3 py-2 text-right">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-[#FFE7B0]">LEVEL</div>
+                    <div className="text-lg font-black text-[#F5A623]">Lv.{result.level}</div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={pendingRequestUid === result.uid}
+                    onClick={() => void handleSendFriendRequest(result.uid)}
+                    className="rounded-2xl bg-[#F5A623] px-4 py-2 text-xs font-black text-[#0a0a0a] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {pendingRequestUid === result.uid ? "送信中..." : "リクエスト送信"}
+                  </button>
                 </div>
               </div>
             </article>

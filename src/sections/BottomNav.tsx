@@ -7,9 +7,10 @@ type NavTab = "home" | "routine" | "training" | "character" | "social" | "achiev
 interface BottomNavProps {
   activeTab?: NavTab
   onTabChange?: (tab: NavTab) => void
+  socialBadgeCount?: number
 }
 
-export default function BottomNav({ activeTab = "home", onTabChange }: BottomNavProps) {
+export default function BottomNav({ activeTab = "home", onTabChange, socialBadgeCount = 0 }: BottomNavProps) {
   const { t } = useTranslation()
   const tabs: { id: NavTab; icon: React.ReactNode; label: string }[] = [
     { id: "home", icon: <IconCastle className="w-7 h-7" />, label: t("nav.home") },
@@ -40,8 +41,13 @@ export default function BottomNav({ activeTab = "home", onTabChange }: BottomNav
             aria-label={tab.label}
             aria-current={isActive ? "page" : undefined}
           >
-            <span className={isActive ? "text-[var(--color-gold-dark)] dark:text-[var(--color-gold)]" : "text-[#7A7A7A] dark:text-[#A3A3A3]"}>
+            <span className={`relative ${isActive ? "text-[var(--color-gold-dark)] dark:text-[var(--color-gold)]" : "text-[#7A7A7A] dark:text-[#A3A3A3]"}`}>
               {tab.icon}
+              {tab.id === "social" && socialBadgeCount > 0 ? (
+                <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#F5A623] px-1 text-[10px] font-black text-[#0a0a0a]">
+                  {socialBadgeCount > 9 ? "9+" : socialBadgeCount}
+                </span>
+              ) : null}
             </span>
             <span
               className={[
