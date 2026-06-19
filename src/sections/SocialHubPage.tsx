@@ -5,6 +5,7 @@ import SocialPage from "@/sections/SocialPage"
 import GuildPage from "@/sections/GuildPage"
 import GorillaBattleSection from "@/sections/GorillaBattleSection"
 import type { UserProfile } from "@/utils/firestoreSync"
+import { appShellClassName, cardClassName, mutedTextClassName } from "@/components/ui"
 
 type SocialSection = "friends" | "guild" | "battle"
 type FriendSection = "profile" | "social"
@@ -20,9 +21,9 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
   const [activeFriendSection, setActiveFriendSection] = useState<FriendSection>("social")
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white">
+    <div className={`${appShellClassName} px-4 py-6`}>
       <motion.section
-        className="rounded-[30px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.18),rgba(255,255,255,0.04))] p-5 shadow-[0_20px_48px_rgba(245,166,35,0.14)]"
+        className={cardClassName}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -30,19 +31,19 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">SOCIAL</div>
             <h1 className="mt-2 text-2xl font-black text-white">フレンド・ギルド・対決</h1>
-            <p className="mt-2 text-sm leading-6 text-white/70">
+            <p className={`mt-2 leading-6 ${mutedTextClassName}`}>
               フレンド交流、ギルド連携、そしてゴリラ対決まで、このタブでまとめて管理できます。
             </p>
           </div>
           {socialBadgeCount > 0 ? (
-            <div className="rounded-2xl border border-[#F5A623]/30 bg-[#F5A623]/12 px-4 py-3 text-right">
+            <div className="rounded-[12px] border border-[#2a2a2a] bg-[#111111] px-4 py-3 text-right">
               <div className="text-[11px] uppercase tracking-[0.18em] text-[#FFE7B0]">通知</div>
               <div className="mt-1 text-2xl font-black text-[#F5A623]">{socialBadgeCount > 99 ? "99+" : socialBadgeCount}</div>
             </div>
           ) : null}
         </div>
 
-        <div className="mt-5 flex rounded-[22px] border border-[#F5A623]/20 bg-black/25 p-1">
+        <div className="mt-5 flex rounded-[12px] border border-[#2a2a2a] bg-[#111111] p-1">
           <SectionButton
             active={activeSection === "friends"}
             label="フレンド"
@@ -63,7 +64,7 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
         </div>
 
         {activeSection === "friends" ? (
-          <div className="mt-4 flex rounded-[20px] border border-[#F5A623]/15 bg-black/20 p-1">
+          <div className="mt-4 flex rounded-[12px] border border-[#2a2a2a] bg-[#111111] p-1">
             <SectionButton
               active={activeFriendSection === "social"}
               label="フレンド一覧"
@@ -80,7 +81,7 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
         ) : null}
       </motion.section>
 
-      <div className="mt-5">
+      <div className="mt-6">
         {activeSection === "guild" ? (
           <GuildPage profile={profile} />
         ) : activeSection === "battle" ? (
@@ -109,11 +110,11 @@ function SectionButton({ active, label, onClick, badge, compact = false }: Secti
       type="button"
       onClick={onClick}
       className={[
-        "relative flex-1 rounded-[18px] px-4 font-black transition",
+        "relative flex-1 rounded-[8px] px-4 font-black transition",
         compact ? "py-2 text-sm" : "py-3 text-sm",
         active
-          ? "bg-[#F5A623] text-[#0a0a0a] shadow-[0_10px_24px_rgba(245,166,35,0.22)]"
-          : "text-[#FFE7B0] hover:bg-white/5",
+          ? "bg-[#F5A623] text-[#0a0a0a]"
+          : "text-[#888888] hover:bg-[#1a1a1a] hover:text-white",
       ].join(" ")}
     >
       {label}

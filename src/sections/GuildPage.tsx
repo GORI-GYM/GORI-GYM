@@ -258,34 +258,34 @@ export default function GuildPage({ profile }: GuildPageProps) {
   }
 
   if (loading) {
-    return <div className="px-4 py-8 text-center text-sm text-white/60">読み込み中...</div>
+    return <div className="bg-[#0a0a0a] px-4 py-8 text-center text-[#888] text-sm">読み込み中...</div>
   }
 
   if (!user) {
     return (
       <div className="min-h-full bg-[#0a0a0a] px-4 py-8">
-        <div className="rounded-[28px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.12),rgba(255,255,255,0.04))] p-6 text-center shadow-[0_18px_40px_rgba(245,166,35,0.12)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5A623]/15 text-[#F5A623]">
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+          <div className="mx-auto bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 flex h-16 w-16 items-center justify-center text-[#F5A623]">
             <IconShield className="h-8 w-8" />
           </div>
-          <h1 className="mt-4 text-2xl font-black text-white">GUILD</h1>
-          <p className="mt-3 text-sm leading-6 text-white/72">ログインするとギルド作成、招待、チャット、対抗戦に参加できます。</p>
+          <h1 className="mt-4 text-white font-bold text-lg">GUILD</h1>
+          <p className="mt-3 text-[#ccc]">ログインするとギルド作成、招待、チャット、対抗戦に参加できます。</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white">
+    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white space-y-6">
       <motion.section
-        className="rounded-[30px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.18),rgba(255,255,255,0.04))] p-5 shadow-[0_20px_48px_rgba(245,166,35,0.14)]"
+        className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">GUILD HALL</div>
-        <h1 className="mt-2 text-2xl font-black">ギルド</h1>
-        <p className="mt-2 text-sm leading-6 text-white/70">最大5人の仲間と鍛え、リアルタイムで進捗を競う週間ギルド対抗戦に挑め。</p>
-        {statusMessage ? <p className="mt-3 text-sm text-[#FFE7B0]">{statusMessage}</p> : null}
+        <div className="text-[#888] text-sm">GUILD HALL</div>
+        <h1 className="mt-2 text-white font-bold text-lg">ギルド</h1>
+        <p className="mt-2 text-[#ccc]">最大5人の仲間と鍛え、リアルタイムで進捗を競う週間ギルド対抗戦に挑め。</p>
+        {statusMessage ? <p className="mt-3 text-[#ccc]">{statusMessage}</p> : null}
       </motion.section>
 
       {invites.length > 0 ? (

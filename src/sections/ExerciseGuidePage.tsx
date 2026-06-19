@@ -50,17 +50,17 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
   }, [searchTerm, selectedBodyPart])
 
   return (
-    <section className="mx-auto flex w-full max-w-[430px] flex-col gap-4 px-4 pb-28 pt-5">
-      <div className="rounded-[2rem] border border-[#F5A623]/30 bg-[linear-gradient(135deg,rgba(245,166,35,0.18),rgba(255,255,255,0.98))] p-5 shadow-[0_24px_60px_rgba(245,166,35,0.18)] dark:bg-[linear-gradient(135deg,rgba(245,166,35,0.18),rgba(10,10,10,0.96))]">
+    <section className="mx-auto flex w-full max-w-[430px] flex-col gap-4 bg-[#0a0a0a] px-4 pb-28 pt-5">
+      <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-[#B77900]">Beginner Guide</div>
-            <h2 className="mt-2 text-2xl font-black text-[#0a0a0a] dark:text-white">初心者ガイド📖</h2>
-            <p className="mt-2 text-sm leading-6 text-[#4A4A4A] dark:text-[#D6D6D6]">
+            <div className="text-[#888] text-sm">Beginner Guide</div>
+            <h2 className="mt-2 text-white font-bold text-lg">初心者ガイド📖</h2>
+            <p className="mt-2 text-[#ccc]">
               種目のやり方・よくあるミス・初心者向け重量目安をまとめました。
             </p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0a0a0a] text-[#F5A623]">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 flex h-12 w-12 items-center justify-center text-[#F5A623]">
             <IconBook className="h-6 w-6" />
           </div>
         </div>
@@ -73,8 +73,8 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
                 key={filter.key}
                 type="button"
                 onClick={() => setSelectedBodyPart(filter.key)}
-                className={`rounded-full px-4 py-2 text-xs font-bold transition ${
-                  active ? "bg-[#F5A623] text-[#0a0a0a]" : "border border-[#F5A623]/30 bg-white text-[#8A5A00] dark:bg-[#111111] dark:text-[#FFE082]"
+                className={`rounded-lg px-4 py-2 text-sm transition ${
+                  active ? "bg-[#F5A623] text-black font-bold" : "border border-[#F5A623] text-[#F5A623]"
                 }`}
               >
                 {filter.label}
@@ -88,7 +88,7 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="種目名・部位・筋肉で検索"
-            className="w-full rounded-2xl border border-[#F5A623]/30 bg-white px-4 py-3 text-sm text-[#0a0a0a] outline-none focus:border-[#F5A623] dark:bg-[#111111] dark:text-white"
+            className="w-full bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc] outline-none"
           />
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
             <motion.article
               key={exercise.name}
               layout
-              className="overflow-hidden rounded-[1.75rem] border border-[#F5A623]/25 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:bg-[#171717]"
+              className="overflow-hidden bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]"
             >
               <button
                 type="button"
@@ -110,46 +110,46 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-lg">{equipmentIcons[exercise.equipment]}</span>
-                    <h3 className="text-base font-black text-[#0a0a0a] dark:text-white">{exercise.name}</h3>
+                    <h3 className="text-white font-bold text-lg">{exercise.name}</h3>
                     <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${difficultyStyles[exercise.difficulty]}`}>
                       {exercise.difficulty}
                     </span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-[#8A5A00] dark:text-[#FFE082]">
-                    <span className="rounded-full bg-[#FFF8E7] px-2.5 py-1 dark:bg-[#2A2110]">{exerciseBodyPartLabels[exercise.bodyPart]}</span>
-                    <span className="rounded-full bg-[#FFF8E7] px-2.5 py-1 dark:bg-[#2A2110]">{exercise.equipment}</span>
-                    <span className="rounded-full bg-[#FFF8E7] px-2.5 py-1 dark:bg-[#2A2110]">推奨 {exercise.suggestedSets} / {exercise.suggestedReps}</span>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[#888] text-sm">
+                    <span className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">{exerciseBodyPartLabels[exercise.bodyPart]}</span>
+                    <span className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">{exercise.equipment}</span>
+                    <span className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">推奨 {exercise.suggestedSets} / {exercise.suggestedReps}</span>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-[#4A4A4A] dark:text-[#D6D6D6]">{exercise.description}</p>
+                  <p className="mt-3 text-[#ccc]">{exercise.description}</p>
                 </div>
                 <IconChevronRight className={`mt-1 h-4 w-4 text-[#B77900] transition ${expanded ? "rotate-90" : ""}`} />
               </button>
 
               {expanded ? (
-                <div className="border-t border-[#F5A623]/20 bg-[#FFFDF6] p-4 dark:bg-[#111111]">
+                <div className="border-t border-[#2a2a2a] bg-[#0a0a0a] p-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-white p-3 dark:bg-[#171717]">
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#B77900]">主動筋</div>
-                      <div className="mt-2 text-sm text-[#0a0a0a] dark:text-white">{exercise.targetMuscles.primary.join(" / ")}</div>
+                    <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                      <div className="text-[#888] text-sm">主動筋</div>
+                      <div className="mt-2 text-[#ccc]">{exercise.targetMuscles.primary.join(" / ")}</div>
                     </div>
-                    <div className="rounded-2xl bg-white p-3 dark:bg-[#171717]">
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#B77900]">補助筋</div>
-                      <div className="mt-2 text-sm text-[#0a0a0a] dark:text-white">{exercise.targetMuscles.secondary.join(" / ") || "なし"}</div>
+                    <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                      <div className="text-[#888] text-sm">補助筋</div>
+                      <div className="mt-2 text-[#ccc]">{exercise.targetMuscles.secondary.join(" / ") || "なし"}</div>
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-2xl bg-white p-4 dark:bg-[#171717]">
-                    <div className="text-sm font-black text-[#0a0a0a] dark:text-white">フォームのコツ</div>
-                    <ul className="mt-3 space-y-2 text-sm text-[#4A4A4A] dark:text-[#D6D6D6]">
+                  <div className="mt-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                    <div className="text-white font-bold text-lg">フォームのコツ</div>
+                    <ul className="mt-3 space-y-2 text-[#ccc]">
                       {exercise.formTips.map((tip) => (
                         <li key={tip}>💡 {tip}</li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="mt-3 rounded-2xl bg-white p-4 dark:bg-[#171717]">
-                    <div className="text-sm font-black text-[#0a0a0a] dark:text-white">よくある間違い</div>
-                    <ul className="mt-3 space-y-2 text-sm text-[#4A4A4A] dark:text-[#D6D6D6]">
+                  <div className="mt-3 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                    <div className="text-white font-bold text-lg">よくある間違い</div>
+                    <ul className="mt-3 space-y-2 text-[#ccc]">
                       {exercise.commonMistakes.map((mistake) => (
                         <li key={mistake}>⚠️ {mistake}</li>
                       ))}
@@ -157,13 +157,13 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-[#0a0a0a] p-4 text-white">
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#FFD27A]">初心者男性目安</div>
-                      <div className="mt-2 text-xl font-black">{exercise.beginnerWeightMale > 0 ? `${exercise.beginnerWeightMale}kg` : "自重"}</div>
+                    <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-white">
+                      <div className="text-[#888] text-sm">初心者男性目安</div>
+                      <div className="mt-2 text-white font-bold text-lg">{exercise.beginnerWeightMale > 0 ? `${exercise.beginnerWeightMale}kg` : "自重"}</div>
                     </div>
-                    <div className="rounded-2xl bg-[#F5A623] p-4 text-[#0a0a0a]">
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A4300]">初心者女性目安</div>
-                      <div className="mt-2 text-xl font-black">{exercise.beginnerWeightFemale > 0 ? `${exercise.beginnerWeightFemale}kg` : "自重"}</div>
+                    <div className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2">
+                      <div className="text-[#888] text-sm">初心者女性目安</div>
+                      <div className="mt-2 text-black font-bold text-lg">{exercise.beginnerWeightFemale > 0 ? `${exercise.beginnerWeightFemale}kg` : "自重"}</div>
                     </div>
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function ExerciseGuidePage({ onBackHome }: ExerciseGuidePageProps
       <button
         type="button"
         onClick={onBackHome}
-        className="rounded-2xl border border-[#F5A623]/30 bg-white px-4 py-3 text-sm font-bold text-[#8A5A00] dark:bg-[#171717] dark:text-[#FFE082]"
+        className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2"
       >
         HOMEへ戻る
       </button>

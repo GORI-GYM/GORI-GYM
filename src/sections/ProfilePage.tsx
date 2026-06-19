@@ -138,21 +138,21 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
   }
 
   if (loading) {
-    return <div className="px-4 py-8 text-center text-sm text-slate-500">読み込み中...</div>
+    return <div className="bg-[#0a0a0a] px-4 py-8 text-center text-[#888] text-sm">読み込み中...</div>
   }
 
   if (!user) {
     return (
       <div className="min-h-full bg-[#0a0a0a] px-4 py-8">
-        <div className="rounded-[28px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.12),rgba(255,255,255,0.04))] p-6 text-center shadow-[0_18px_40px_rgba(245,166,35,0.12)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5A623]/15 text-[#F5A623]">
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+          <div className="mx-auto bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 flex h-16 w-16 items-center justify-center text-[#F5A623]">
             <IconUsers className="h-8 w-8" />
           </div>
-          <h1 className="mt-4 text-2xl font-black text-white">プロフィール & フレンド</h1>
-          <p className="mt-3 text-sm leading-6 text-white/72">
+          <h1 className="mt-4 text-white font-bold text-lg">プロフィール & フレンド</h1>
+          <p className="mt-3 text-[#ccc]">
             ログインするとプロフィール編集、フレンドコード発行、ユーザー検索が使えます。
           </p>
-          <div className="mt-5 rounded-2xl border border-[#F5A623]/20 bg-white/5 px-4 py-3 text-sm text-[#FFE7B0]">
+          <div className="mt-5 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc]">
             右上のログインからGORU GYMアカウントに参加してください。
           </div>
         </div>
@@ -161,20 +161,20 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
   }
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white">
+    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white space-y-6">
       <motion.section
-        className="rounded-[30px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.18),rgba(255,255,255,0.04))] p-5 shadow-[0_20px_48px_rgba(245,166,35,0.14)]"
+        className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">PROFILE</div>
-            <h1 className="mt-2 text-2xl font-black">GORU SOCIAL</h1>
+            <div className="text-[#888] text-sm">PROFILE</div>
+            <h1 className="mt-2 text-white font-bold text-lg">GORU SOCIAL</h1>
           </div>
-          <div className="rounded-2xl border border-[#F5A623]/30 bg-black/30 px-4 py-3 text-right">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[#FFE7B0]">GORILLA LEVEL</div>
-            <div className="mt-1 text-2xl font-black text-[#F5A623]">Lv.{profile.level}</div>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-right">
+            <div className="text-[#888] text-sm">GORILLA LEVEL</div>
+            <div className="mt-1 text-white font-bold text-lg">Lv.{profile.level}</div>
           </div>
         </div>
 
@@ -183,36 +183,36 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
           <StatCard label="総XP" value={`${profile.xp.toLocaleString()} XP`} />
         </div>
 
-        <div className="mt-5 rounded-[24px] border border-[#F5A623]/20 bg-black/30 p-4">
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[#FFE7B0]">表示名</label>
+        <div className="mt-5 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+          <label className="text-[#888] text-sm">表示名</label>
           <input
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             maxLength={24}
-            className="mt-2 w-full rounded-2xl border border-[#F5A623]/25 bg-white px-4 py-3 text-sm font-semibold text-[#0a0a0a] outline-none ring-0 placeholder:text-slate-400"
+            className="mt-2 w-full bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc] outline-none"
             placeholder="GORU GYM USER"
           />
           <button
             type="button"
             onClick={() => void handleSave()}
             disabled={isSaving}
-            className="mt-3 w-full rounded-2xl bg-[#F5A623] px-4 py-3 text-sm font-black text-[#0a0a0a] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 w-full bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? "保存中..." : "プロフィールを保存"}
           </button>
-          {saveMessage ? <p className="mt-3 text-sm text-[#FFE7B0]">{saveMessage}</p> : null}
+          {saveMessage ? <p className="mt-3 text-[#ccc]">{saveMessage}</p> : null}
         </div>
 
-        <div className="mt-5 rounded-[24px] border border-[#F5A623]/20 bg-white/[0.06] p-4">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#FFE7B0]">FRIEND CODE</div>
+        <div className="mt-5 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+          <div className="text-[#888] text-sm">FRIEND CODE</div>
           <div className="mt-2 flex items-center gap-3">
-            <div className="flex-1 rounded-2xl border border-[#F5A623]/25 bg-black/40 px-4 py-3 text-lg font-black tracking-[0.28em] text-[#F5A623]">
+            <div className="flex-1 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-white font-bold text-lg">
               {friendCode || "------"}
             </div>
             <button
               type="button"
               onClick={() => void handleCopy()}
-              className="rounded-2xl border border-[#F5A623]/30 bg-[#F5A623]/10 px-4 py-3 text-sm font-bold text-[#F5A623] transition hover:bg-[#F5A623]/20"
+              className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2"
             >
               コピー
             </button>
@@ -221,33 +221,33 @@ export default function ProfilePage({ profile, onProfileChange }: ProfilePagePro
       </motion.section>
 
       <motion.section
-        className="mt-5 rounded-[30px] border border-[#F5A623]/20 bg-white/[0.04] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]"
+        className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08 }}
       >
-        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">USER SEARCH</div>
-        <h2 className="mt-2 text-xl font-black">仲間を探す</h2>
-        <p className="mt-2 text-sm leading-6 text-white/70">フレンドコード完全一致、または表示名の前方一致で検索できます。</p>
+        <div className="text-[#888] text-sm">USER SEARCH</div>
+        <h2 className="mt-2 text-white font-bold text-lg">仲間を探す</h2>
+        <p className="mt-2 text-[#ccc]">フレンドコード完全一致、または表示名の前方一致で検索できます。</p>
 
         <div className="mt-4 flex gap-3">
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="flex-1 rounded-2xl border border-[#F5A623]/25 bg-white px-4 py-3 text-sm font-semibold text-[#0a0a0a] outline-none placeholder:text-slate-400"
+            className="flex-1 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc] outline-none"
             placeholder="例: GORU01 / ゴリラ太郎"
           />
           <button
             type="button"
             onClick={() => void handleSearch()}
             disabled={isSearching}
-            className="rounded-2xl bg-[#F5A623] px-5 py-3 text-sm font-black text-[#0a0a0a] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+            className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSearching ? "検索中" : "検索"}
           </button>
         </div>
 
-        {searchMessage ? <p className="mt-3 text-sm text-[#FFE7B0]">{searchMessage}</p> : null}
+        {searchMessage ? <p className="mt-3 text-[#ccc]">{searchMessage}</p> : null}
 
         <div className="mt-4 space-y-3">
           {searchResults.map((result) => (

@@ -128,11 +128,11 @@ export const MAX_LEVEL = 100
 export const XP_PER_LEVEL = 5000
 export const LEVEL_THRESHOLDS = Array.from({ length: MAX_LEVEL }, (_, index) => index * XP_PER_LEVEL)
 
-const cardClassName = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#D4A900]/20 dark:bg-[#171717] dark:text-[#F8FAFC]"
-const subtleCardClassName = "rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-[#D4A900]/20 dark:bg-[#111111] dark:text-[#CBD5E1]"
-const secondaryButtonClassName = "rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-[#FFE066] hover:text-[#D4A017] dark:border-[#D4A900]/20 dark:bg-[#171717] dark:text-[#CBD5E1] dark:hover:border-[#FFD400] dark:hover:text-[#F8FAFC]"
-const primaryButtonClassName = "w-full rounded-xl bg-[#D4A017] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#B8860B]"
-const inputClassName = "w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-[#D4A017] focus:ring-4 focus:ring-[#FFF1A8] dark:border-[#D4A900]/20 dark:bg-[#171717] dark:text-[#F8FAFC]"
+const cardClassName = "bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
+const subtleCardClassName = "bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
+const secondaryButtonClassName = "border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2"
+const primaryButtonClassName = "w-full bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2"
+const inputClassName = "w-full bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc] outline-none"
 const celebrationColors = ["#D4A900", "#FFB800", "#FFE066", "#FFF07A", "#8A6500", "#F5E6C8"] as const
 
 function createCelebrationParticles(): CelebrationParticle[] {

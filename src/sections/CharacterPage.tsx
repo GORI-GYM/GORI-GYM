@@ -94,9 +94,9 @@ function getWorkoutsToNextLevel(group: MuscleGroup) {
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <div className="h-px flex-1 bg-slate-200" />
-      <h2 className="px-2 text-sm font-semibold tracking-wide text-slate-800">{title}</h2>
-      <div className="h-px flex-1 bg-slate-200" />
+      <div className="h-px flex-1 bg-[#2a2a2a]" />
+      <h2 className="px-2 text-white font-bold text-lg">{title}</h2>
+      <div className="h-px flex-1 bg-[#2a2a2a]" />
     </div>
   )
 }
@@ -155,9 +155,9 @@ function MuscleIcon({ group }: { group: MuscleGroupKey }) {
 
 function StatSummaryCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-      <div className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{label}</div>
-      <div className="text-base font-semibold text-slate-800" style={{ color: accent ?? "#1E293B" }}>
+    <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+      <div className="mb-2 text-[#888] text-sm">{label}</div>
+      <div className="text-white font-bold text-lg" style={{ color: accent ?? undefined }}>
         {value}
       </div>
     </div>
@@ -180,32 +180,32 @@ function MonthlyHistoryCard({
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-[24px] border border-[#F5A623]/30 bg-gradient-to-br from-[#FFF9E8] via-white to-[#FFF2CC] p-4 shadow-[0_14px_30px_rgba(245,166,35,0.12)] dark:border-[#F5A623]/20 dark:from-[#171717] dark:via-[#111111] dark:to-[#1B1608]">
+    <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-slate-800 dark:text-white">{monthLabel}</div>
-          <div className="mt-1 inline-flex items-center rounded-full border border-[#F5A623]/30 bg-[#F5A623]/10 px-2.5 py-1 text-[11px] font-semibold text-[#B7791F] dark:text-[#F8D27A]">
+          <div className="text-white font-bold text-lg">{monthLabel}</div>
+          <div className="mt-1 inline-flex items-center border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2">
             {isCurrentMonth ? t("character.historyCurrentMonth") : t("character.historyArchived")}
           </div>
         </div>
-        <div className="rounded-2xl bg-[#111111] px-3 py-2 text-right text-white shadow-sm dark:bg-[#F5A623] dark:text-[#111111]">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em]">{t("character.historyReachedLevel")}</div>
-          <div className="mt-1 text-lg font-bold">{t("character.monthlyLevel", { level })}</div>
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-right text-white">
+          <div className="text-[#888] text-sm">{t("character.historyReachedLevel")}</div>
+          <div className="mt-1 text-white font-bold text-lg">{t("character.monthlyLevel", { level })}</div>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-[#F5A623]/20 bg-white/80 px-3 py-3 text-center dark:bg-[#0F0F0F]">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#B7791F]">{t("character.historyTrainingDays")}</div>
-          <div className="mt-1 text-lg font-bold text-slate-800 dark:text-white">{trainingDays}</div>
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+          <div className="text-[#888] text-sm">{t("character.historyTrainingDays")}</div>
+          <div className="mt-1 text-white font-bold text-lg">{trainingDays}</div>
         </div>
-        <div className="rounded-2xl border border-[#F5A623]/20 bg-white/80 px-3 py-3 text-center dark:bg-[#0F0F0F]">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#B7791F]">{t("character.historyXp")}</div>
-          <div className="mt-1 text-lg font-bold text-slate-800 dark:text-white">{xp}</div>
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+          <div className="text-[#888] text-sm">{t("character.historyXp")}</div>
+          <div className="mt-1 text-white font-bold text-lg">{xp}</div>
         </div>
-        <div className="rounded-2xl border border-[#F5A623]/20 bg-white/80 px-3 py-3 text-center dark:bg-[#0F0F0F]">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#B7791F]">{t("character.historyRank")}</div>
-          <div className="mt-1 text-lg font-bold text-slate-800 dark:text-white">Lv{level}</div>
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+          <div className="text-[#888] text-sm">{t("character.historyRank")}</div>
+          <div className="mt-1 text-white font-bold text-lg">Lv{level}</div>
         </div>
       </div>
     </div>
@@ -253,7 +253,7 @@ export default function CharacterPage({
   const hasGrowthHistory = monthlyHistory.length > 0
 
   return (
-    <div className="min-h-full bg-[#FFFBEA] transition-colors duration-200 dark:bg-[#0B0B0B]">
+    <div className="min-h-full bg-[#0a0a0a] space-y-6">
       <section
         className="relative overflow-hidden px-4 pt-6 pb-6"
         style={{
@@ -279,17 +279,17 @@ export default function CharacterPage({
 
         <div className="relative z-10 flex flex-col items-center">
           <div className="mb-3 text-center">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#D4A017]">{t("character.growth")}</div>
-            <h1 className="m-0 text-3xl font-bold text-slate-800">
+            <div className="mb-2 text-[#888] text-sm">{t("character.growth")}</div>
+            <h1 className="m-0 text-white font-bold text-lg">
               {t(`character.animals.${selectedCharacter}`)}
             </h1>
-            <div className="mt-2 text-sm font-semibold text-[#B8860B]">
+            <div className="mt-2 text-[#ccc]">
               {t(`character.animalsSubtitle.${selectedCharacter}`)}
             </div>
-            <div className="mt-2 text-sm text-slate-500">{t("character.monthlyLevel", { level: monthlyCharacterLevel })}</div>
+            <div className="mt-2 text-[#888] text-sm">{t("character.monthlyLevel", { level: monthlyCharacterLevel })}</div>
           </div>
           <>
-            <div className="rounded-[28px] border border-[#FFE066] bg-white/90 px-4 py-3 shadow-[0_18px_40px_rgba(212,169,0,0.12)] backdrop-blur-sm dark:border-[#D4A900]/20 dark:bg-[#171717]/90">
+            <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
               <div className="flex items-center justify-center rounded-[24px] bg-transparent px-4 py-5">
                 <img
                   src={getCharacterGrowthImage(selectedCharacter, monthlyCharacterLevel)}
@@ -300,37 +300,37 @@ export default function CharacterPage({
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 w-full max-w-[320px]">
-              <div className="col-span-2 rounded-2xl border border-[#FFE066] bg-[#111111] px-4 py-4 text-white shadow-[0_12px_28px_rgba(245,166,35,0.18)] dark:border-[#D4A900]/20">
+              <div className="col-span-2 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-white">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#FFD27A]">Monthly Gorilla XP</div>
-                    <div className="mt-2 text-3xl font-black">Lv{safeMonthlyCharacterProgress.monthlyLevel}<span className="ml-2 text-sm font-semibold text-[#FFD27A]">/20</span></div>
-                    <div className="mt-1 text-sm text-[#FDE7B0]">{safeMonthlyCharacterProgress.monthlyXP.toLocaleString()} XP</div>
+                    <div className="text-[#888] text-sm">Monthly Gorilla XP</div>
+                    <div className="mt-2 text-white font-bold text-lg">Lv{safeMonthlyCharacterProgress.monthlyLevel}<span className="ml-2 text-[#888] text-sm">/20</span></div>
+                    <div className="mt-1 text-[#ccc]">{safeMonthlyCharacterProgress.monthlyXP.toLocaleString()} XP</div>
                   </div>
-                  <div className="rounded-2xl border border-[#F5A623]/40 bg-white/10 px-3 py-2 text-right">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#FFD27A]">Next Level</div>
-                    <div className="mt-1 text-sm font-bold">
+                  <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-right">
+                    <div className="text-[#888] text-sm">Next Level</div>
+                    <div className="mt-1 text-white font-bold text-lg">
                       {safeMonthlyCharacterProgress.nextLevelXp === null ? "MAX LEVEL" : `${safeMonthlyCharacterProgress.xpRemainingToNextLevel} XP`}
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#2a2a2a]">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#F5A623] via-[#FFD400] to-[#FFF07A]"
                     style={{ width: `${safeMonthlyCharacterProgress.progressPercent}%` }}
                   />
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-xl border border-[#F5A623]/20 bg-white/5 px-2 py-2">
-                    <div className="text-[#FFD27A]">トレXP</div>
+                  <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                    <div className="text-[#888] text-sm">トレXP</div>
                     <div className="mt-1 font-bold">{safeMonthlyCharacterProgress.breakdown.trainingXP}</div>
                   </div>
-                  <div className="rounded-xl border border-[#F5A623]/20 bg-white/5 px-2 py-2">
-                    <div className="text-[#FFD27A]">ボーナスXP</div>
+                  <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                    <div className="text-[#888] text-sm">ボーナスXP</div>
                     <div className="mt-1 font-bold">{safeMonthlyCharacterProgress.breakdown.bonusXP}</div>
                   </div>
-                  <div className="rounded-xl border border-[#F5A623]/20 bg-white/5 px-2 py-2">
-                    <div className="text-[#FFD27A]">倍率</div>
+                  <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+                    <div className="text-[#888] text-sm">倍率</div>
                     <div className="mt-1 font-bold">x{safeMonthlyCharacterProgress.breakdown.multiplierApplied}</div>
                   </div>
                 </div>
@@ -338,10 +338,10 @@ export default function CharacterPage({
               {muscleGroups.slice(0, 4).map((group) => (
                 <div
                   key={group.key}
-                  className="rounded-2xl border border-[#FFE066] bg-white px-3 py-3 text-center shadow-sm dark:border-[#D4A900]/20 dark:bg-[#111111]"
+                  className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center"
                 >
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D4A017]">{t(`character.muscleGroups.${group.key}`)}</div>
-                  <div className="mt-1 text-sm font-medium text-slate-600 dark:text-[#CBD5E1]">{t("common.levelShort")} {group.level}</div>
+                  <div className="text-[#888] text-sm">{t(`character.muscleGroups.${group.key}`)}</div>
+                  <div className="mt-1 text-white font-bold text-lg">{t("common.levelShort")} {group.level}</div>
                 </div>
               ))}
             </div>

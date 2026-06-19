@@ -23,9 +23,10 @@ export default function BottomNav({ activeTab = "home", onTabChange, socialBadge
   ]
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex w-full max-w-[430px] items-stretch border-t border-[rgba(17,17,17,0.12)] bg-white shadow-[0_-8px_24px_rgba(17,17,17,0.08)] transition-colors duration-200 dark:border-[var(--color-dark-border)] dark:bg-[var(--color-dark-bg)] dark:shadow-[0_-8px_24px_rgba(0,0,0,0.5)]"
+      className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-[430px] overflow-x-auto border-t border-[#2a2a2a] bg-[#0a0a0a]"
       aria-label={t("nav.mainNavigation")}
     >
+      <div className="flex min-w-max items-stretch">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab
         return (
@@ -33,16 +34,16 @@ export default function BottomNav({ activeTab = "home", onTabChange, socialBadge
             key={tab.id}
             onClick={() => onTabChange?.(tab.id)}
             className={[
-              "flex-1 flex flex-col items-center justify-center gap-1 px-1 py-2 transition-colors duration-100",
+              "flex min-w-[72px] flex-col items-center justify-center gap-1 px-2 py-2 transition-colors duration-100",
               "min-h-[60px] touch-manipulation",
               isActive
-                ? "border-t-2 border-[var(--color-gold)] bg-[var(--color-accent-soft)] text-[var(--color-ink)] dark:bg-[var(--color-dark-surface)] dark:text-[var(--color-gold)]"
-                : "border-t-2 border-transparent text-[#7A7A7A] hover:bg-[#FFFBEA] hover:text-[var(--color-fg)] dark:text-[#A3A3A3] dark:hover:bg-[var(--color-dark-surface)] dark:hover:text-[var(--color-dark-text)]",
+                ? "border-t-2 border-[#F5A623] bg-[#111111] text-[#F5A623]"
+                : "border-t-2 border-transparent text-[#888888] hover:bg-[#111111] hover:text-white",
             ].join(" ")}
             aria-label={tab.label}
             aria-current={isActive ? "page" : undefined}
           >
-            <span className={`relative ${isActive ? "text-[var(--color-gold-dark)] dark:text-[var(--color-gold)]" : "text-[#7A7A7A] dark:text-[#A3A3A3]"}`}>
+            <span className={`relative ${isActive ? "text-[#F5A623]" : "text-[#888888]"}`}>
               {tab.icon}
               {tab.id === "social" && socialBadgeCount > 0 ? (
                 <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#F5A623] px-1 text-[10px] font-black text-[#0a0a0a]">
@@ -52,8 +53,8 @@ export default function BottomNav({ activeTab = "home", onTabChange, socialBadge
             </span>
             <span
               className={[
-                "text-[10px] font-semibold leading-none",
-                isActive ? "text-[var(--color-gold-dark)] dark:text-[var(--color-gold)]" : "text-[#7A7A7A] dark:text-[#A3A3A3]",
+                "text-[9px] font-semibold leading-none",
+                isActive ? "text-[#F5A623]" : "text-[#888888]",
               ].join(" ")}
             >
               {tab.label}
@@ -61,6 +62,7 @@ export default function BottomNav({ activeTab = "home", onTabChange, socialBadge
           </button>
         )
       })}
+      </div>
     </nav>
   )
 }

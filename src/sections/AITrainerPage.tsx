@@ -38,21 +38,21 @@ export default function AITrainerPage({
         <button
           type="button"
           onClick={onBackHome}
-          className="mb-4 rounded-full border border-[#F5A623]/30 bg-white px-4 py-2 text-sm font-bold text-[#8A5A00] dark:bg-[#171717] dark:text-[#FFD27A]"
+          className="mb-4 border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2"
         >
           HOMEへ戻る
         </button>
-        <div className="rounded-[2rem] border border-[#F5A623]/30 bg-[linear-gradient(135deg,#0a0a0a,#1a1a1a)] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-white">
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#F5A623] text-3xl text-[#0a0a0a] shadow-[0_16px_32px_rgba(245,166,35,0.35)]">
+            <div className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 flex h-16 w-16 items-center justify-center text-3xl">
               🦍
             </div>
-            <div className="flex-1 rounded-[1.5rem] border border-[#F5A623]/30 bg-white/10 p-4 backdrop-blur">
-              <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#FFD27A]">GORILLA AI TRAINER</div>
-              <p className="mt-2 text-base font-bold leading-7 text-[#FFF4CC]">
+            <div className="flex-1 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+              <div className="text-[#888] text-sm">GORILLA AI TRAINER</div>
+              <p className="mt-2 text-white font-bold text-lg">
                 まだデータが足りない。もう少しトレーニングを続けたらアドバイスできるぞ！
               </p>
-              <p className="mt-3 text-sm text-[#FDE7B0]">
+              <p className="mt-3 text-[#ccc]">
                 今は{analysis.totalSessions}回分の記録を確認した。まずは5回以上のセッションを積み上げてくれ。
               </p>
             </div>
@@ -63,29 +63,29 @@ export default function AITrainerPage({
   }
 
   return (
-    <section className="space-y-5 px-5 py-6">
+    <section className="bg-[#0a0a0a] space-y-6 px-5 py-6">
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={onBackHome}
-          className="rounded-full border border-[#F5A623]/30 bg-white px-4 py-2 text-sm font-bold text-[#8A5A00] dark:bg-[#171717] dark:text-[#FFD27A]"
+          className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2"
         >
           HOMEへ戻る
         </button>
-        <div className="rounded-full bg-[#F5A623] px-4 py-2 text-xs font-black tracking-[0.18em] text-[#0a0a0a]">
+        <div className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2">
           AI TRAINER
         </div>
       </div>
 
-      <div className="rounded-[2rem] border border-[#F5A623]/30 bg-[linear-gradient(135deg,#0a0a0a,#1a1a1a)] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+      <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-white">
         <div className="flex items-start gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#F5A623] text-3xl text-[#0a0a0a] shadow-[0_16px_32px_rgba(245,166,35,0.35)]">
+          <div className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 flex h-16 w-16 items-center justify-center text-3xl">
             🦍
           </div>
-          <div className="flex-1 rounded-[1.5rem] border border-[#F5A623]/30 bg-white/10 p-4 backdrop-blur">
-            <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#FFD27A]">GORILLA AI TRAINER</div>
-            <p className="mt-2 text-base font-bold leading-7 text-[#FFF4CC]">{analysis.greeting}</p>
-            <p className="mt-3 text-sm text-[#FDE7B0]">{analysis.gradeComment}</p>
+          <div className="flex-1 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+            <div className="text-[#888] text-sm">GORILLA AI TRAINER</div>
+            <p className="mt-2 text-white font-bold text-lg">{analysis.greeting}</p>
+            <p className="mt-3 text-[#ccc]">{analysis.gradeComment}</p>
           </div>
         </div>
       </div>

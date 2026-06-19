@@ -60,75 +60,75 @@ export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecor
 
   return (
     <motion.section
-      className="rounded-3xl bg-[#FFFBEA] px-4 py-4 transition-colors duration-200 dark:bg-[#0B0B0B]"
+      className="bg-[#0a0a0a] space-y-6 px-4 py-4"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, delay: 0.5 }}
       aria-label={t("home.statusTitle")}
     >
-      <div className="rounded-3xl bg-[#FFFFFF] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-colors duration-200 dark:bg-[#171717]">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="space-y-6">
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#64748B] dark:text-[#CBD5E1]">
+            <p className="text-[#888] text-sm">
               {t("home.statusTitle")}
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-[#1E293B] dark:text-[#F8FAFC]">{t("status.big3Title")}</h2>
+            <h2 className="mt-1 text-white font-bold text-lg">{t("status.big3Title")}</h2>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4A900] to-[#FFD400] text-white shadow-[0_10px_24px_rgba(37,99,235,0.28)]">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 flex h-11 w-11 items-center justify-center text-white">
             <IconStar className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="mb-4 rounded-3xl border border-[#F5A623]/30 bg-gradient-to-br from-[#111111] via-[#1A1A1A] to-[#2A1B00] p-4 text-white">
-          <div className="mb-4 rounded-2xl border border-[#F5A623]/30 bg-white/5 p-4">
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-white space-y-6">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#FFD27A]">Gorilla Level</p>
-                <div className="mt-2 text-3xl font-black">Lv{safeMonthlyCharacterProgress.monthlyLevel}<span className="ml-2 text-sm font-semibold text-[#FFD27A]">/ 20</span></div>
-                <div className="mt-1 text-sm text-[#FDE7B0]">今月XP {safeMonthlyCharacterProgress.monthlyXP.toLocaleString()}</div>
+                <p className="text-[#888] text-sm">Gorilla Level</p>
+                <div className="mt-2 text-white font-bold text-lg">Lv{safeMonthlyCharacterProgress.monthlyLevel}<span className="ml-2 text-[#888] text-sm">/ 20</span></div>
+                <div className="mt-1 text-[#ccc]">今月XP {safeMonthlyCharacterProgress.monthlyXP.toLocaleString()}</div>
               </div>
-              <div className="rounded-2xl border border-[#F5A623]/40 bg-[#F5A623]/15 px-3 py-2 text-right">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#FFD27A]">Next</div>
-                <div className="mt-1 text-sm font-bold text-white">
+              <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-right">
+                <div className="text-[#888] text-sm">Next</div>
+                <div className="mt-1 text-white font-bold text-lg">
                   {safeMonthlyCharacterProgress.nextLevelXp === null ? "MAX" : `あと ${safeMonthlyCharacterProgress.xpRemainingToNextLevel} XP`}
                 </div>
               </div>
             </div>
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#2a2a2a]">
               <div className="h-full rounded-full bg-gradient-to-r from-[#F5A623] via-[#FFD400] to-[#FFF07A]" style={{ width: `${safeMonthlyCharacterProgress.progressPercent}%` }} />
             </div>
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#FFD27A]">Weekly Streak</p>
+              <p className="text-[#888] text-sm">Weekly Streak</p>
               <div className="mt-2 flex items-center gap-3">
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5A623] text-3xl ${streakGlow}`}>🔥</div>
+                  <div className={`bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 flex h-14 w-14 items-center justify-center text-3xl ${streakGlow}`}>🔥</div>
                 <div>
-                  <div className="text-3xl font-black">{weeklyProgress.currentStreak}<span className="ml-1 text-sm font-semibold text-[#FFD27A]">週</span></div>
-                  <div className="text-sm text-[#FDE7B0]">{weeklyProgress.completedDays}/{weeklyProgress.weeklyGoal} 回達成</div>
+                  <div className="text-white font-bold text-lg">{weeklyProgress.currentStreak}<span className="ml-1 text-[#888] text-sm">週</span></div>
+                  <div className="text-[#ccc]">{weeklyProgress.completedDays}/{weeklyProgress.weeklyGoal} 回達成</div>
                 </div>
               </div>
             </div>
-            <button type="button" onClick={onOpenGoalSettings} className="rounded-2xl border border-[#F5A623]/40 bg-white/10 px-3 py-2 text-xs font-bold text-[#FFF4D1] transition hover:bg-white/20">
+            <button type="button" onClick={onOpenGoalSettings} className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2">
               目標設定
             </button>
           </div>
-          <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#2a2a2a]">
             <div className="h-full rounded-full bg-gradient-to-r from-[#F5A623] via-[#FFD400] to-[#FFF07A]" style={{ width: `${progressPct}%` }} />
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-[#FDE7B0]">
+          <div className="mt-3 flex items-center justify-between text-[#888] text-sm">
             <span>今週XP {weeklyProgress.weeklyXP}</span>
             <span>倍率 x{weeklyProgress.xpMultiplier}</span>
           </div>
           <div className="mt-4 grid grid-cols-7 gap-2">
             {weekDays.map((day) => (
-              <div key={day.label} className={`rounded-2xl border px-2 py-3 text-center ${day.checked ? "border-[#FFD400] bg-[#F5A623] text-[#0a0a0a]" : "border-white/10 bg-white/5 text-[#FFF4D1]"}`}>
-                <div className="text-[11px] font-semibold">{day.label}</div>
+              <div key={day.label} className={`rounded-xl border px-2 py-3 text-center ${day.checked ? "border-[#F5A623] bg-[#F5A623] text-black" : "border-[#2a2a2a] bg-[#1a1a1a] text-[#888]"}`}>
+                <div className="text-[#888] text-sm">{day.label}</div>
                 <div className="mt-1 text-lg">{day.checked ? "✓" : "·"}</div>
               </div>
             ))}
           </div>
-          <div className="mt-3 text-xs text-[#FDE7B0]">
+          <div className="mt-3 text-[#888] text-sm">
             フリーズ: {weeklyProgress.streakFreezeAvailable ? "今月分あり" : "使用済み"}
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecor
           {[...leftStats, ...rightStats].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-[#FFF1A8] bg-[#FFFFFF] px-4 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.06)] transition-colors duration-200 dark:border-[#D4A900]/20 dark:bg-[#111111]"
+              className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
             >
               <div className="flex items-center gap-3">
                 <div
@@ -147,9 +147,9 @@ export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecor
                   {stat.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-[#64748B] dark:text-[#CBD5E1]">{stat.label}</p>
-                  <p className="mt-1 text-2xl font-semibold leading-none text-[#1E293B] dark:text-[#F8FAFC]">{stat.value}</p>
-                  <p className="mt-2 text-xs font-semibold text-blue-600 dark:text-[#FFE066]">{t("training.estimatedMax")}: {stat.estimatedMax?.toFixed(1).replace(/\.0$/, "") ?? "0"}kg</p>
+                  <p className="text-[#888] text-sm">{stat.label}</p>
+                  <p className="mt-1 text-white font-bold text-lg leading-none">{stat.value}</p>
+                  <p className="mt-2 text-[#ccc]">{t("training.estimatedMax")}: {stat.estimatedMax?.toFixed(1).replace(/\.0$/, "") ?? "0"}kg</p>
                 </div>
               </div>
             </div>
@@ -157,8 +157,8 @@ export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecor
         </div>
 
         {motivationMessage && (
-          <div className="mt-4 rounded-2xl border border-[#FFF1A8] bg-[#FFF8D6] px-4 py-3 text-center transition-colors duration-200 dark:border-[#D4A900]/20 dark:bg-[#111111]">
-            <p className="text-sm text-[#64748B] dark:text-[#CBD5E1]">{motivationMessage}</p>
+          <div className="mt-4 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+            <p className="text-[#ccc]">{motivationMessage}</p>
           </div>
         )}
       </div>

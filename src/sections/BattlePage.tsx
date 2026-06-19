@@ -50,14 +50,14 @@ export default function BattlePage({ battle, currentUid, onComplete, onClose }: 
 
   return (
     <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white">
-      <section className="rounded-[30px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.18),rgba(255,255,255,0.04))] p-5 shadow-[0_20px_48px_rgba(245,166,35,0.14)]">
+      <section className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">GORILLA BATTLE</div>
-            <h1 className="mt-2 text-2xl font-black text-white">ゴリラ対決</h1>
-            <p className="mt-2 text-sm text-white/70">ステータス比較で勝敗が決まる自動バトルです。</p>
+            <div className="text-[#888] text-sm">GORILLA BATTLE</div>
+            <h1 className="mt-2 text-white font-bold text-lg">ゴリラ対決</h1>
+            <p className="mt-2 text-[#ccc]">ステータス比較で勝敗が決まる自動バトルです。</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-2xl border border-[#F5A623]/30 px-4 py-2 text-sm font-bold text-[#F5A623]">
+          <button type="button" onClick={onClose} className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2">
             閉じる
           </button>
         </div>

@@ -85,7 +85,7 @@ export default function AvatarSection({
 
   return (
     <section
-      className="relative overflow-hidden rounded-b-[2rem] bg-[#FFFBEA] px-5 pb-6 pt-5 transition-colors duration-200 dark:bg-[#0B0B0B]"
+      className="relative overflow-hidden bg-[#0a0a0a] space-y-6 px-5 pb-6 pt-5"
       style={{
         minHeight: "320px",
       }}
@@ -106,7 +106,7 @@ export default function AvatarSection({
       >
         <div className="mb-5 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F5A623] shadow-[0_14px_30px_rgba(245,166,35,0.28)]">
+            <div className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 flex h-11 w-11 items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path d="M12 2L19 5V11C19 15.418 16.105 19.216 12 20.5C7.895 19.216 5 15.418 5 11V5L12 2Z" fill="white" fillOpacity="0.18"/>
                 <path d="M12 4.2L17 6.3V10.8C17 14.1 14.95 17.02 12 18.1C9.05 17.02 7 14.1 7 10.8V6.3L12 4.2Z" stroke="white" strokeWidth="1.6"/>
@@ -115,16 +115,16 @@ export default function AvatarSection({
               </svg>
             </div>
             <div>
-              <div className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-[#F5A623]">
+              <div className="text-[#888] text-sm">
                 {t("common.appName")}
               </div>
-              <div className="text-sm font-medium text-[#3A3A3A] dark:text-[#CBD5E1]">{t("home.heroSubtitle")}</div>
+              <div className="text-[#ccc]">{t("home.heroSubtitle")}</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#111111] shadow-[0_12px_24px_rgba(15,23,42,0.08)] dark:bg-[#171717] dark:text-[#F8FAFC]"
+              className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 relative flex h-11 w-11 items-center justify-center text-white"
               aria-label={t("home.notifications")}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -136,7 +136,7 @@ export default function AvatarSection({
             <button
               type="button"
               onClick={openEditModal}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFE066)] text-sm font-bold text-[#111111] shadow-[0_12px_24px_rgba(245,166,35,0.22)]"
+              className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 flex h-11 w-11 items-center justify-center text-sm"
               aria-label={t("home.editProfile")}
             >
               {level}
@@ -156,18 +156,18 @@ export default function AvatarSection({
               aria-hidden="true"
             />
             <motion.div
-              className="absolute left-1/2 top-2 z-20 w-[min(210px,calc(100%-2rem))] -translate-x-1/2 rounded-[1.25rem] border border-[#F5A623] bg-white px-3 py-2 text-left shadow-[0_18px_40px_rgba(0,0,0,0.22)] md:left-auto md:right-2 md:top-0 md:w-[210px] md:translate-x-0 dark:border-[#F5A623]/40 dark:bg-[#171717]"
+              className="absolute left-1/2 top-2 z-20 w-[min(210px,calc(100%-2rem))] -translate-x-1/2 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-left md:left-auto md:right-2 md:top-0 md:w-[210px] md:translate-x-0"
               initial={{ opacity: 0, y: 10, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" }}
             >
-              <div className="text-[0.56rem] font-semibold uppercase tracking-[0.2em] text-[#F5A623]">
+              <div className="text-[#888] text-sm">
                 Gorilla AI · {getGorillaEmotionLabel(gorillaEmotion)}
               </div>
-              <p className="mt-1 text-[0.8rem] font-semibold leading-5 text-[#111111] dark:text-[#F8FAFC]">
+              <p className="mt-1 text-[#ccc]">
                 {gorillaLine}
               </p>
-              <div className="mt-2 text-[0.62rem] font-semibold tracking-[0.08em] text-[#7c5a00] dark:text-[#f5d77a]">
+              <div className="mt-2 text-[#888] text-sm">
                 {skippedDays === 0 ? "今日は会えてうれしそうだ" : `${skippedDays}日あいてる`}
               </div>
               <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 rounded-[0.3rem] border-b border-r border-[#F5A623] bg-white md:left-auto md:right-8 md:translate-x-0 dark:border-[#F5A623]/40 dark:bg-[#171717]" />
@@ -179,29 +179,29 @@ export default function AvatarSection({
             />
           </div>
 
-          <div className="relative rounded-[2rem] bg-white/88 p-5 shadow-[0_24px_48px_rgba(0,0,0,0.12)] backdrop-blur dark:bg-[#171717]">
-            <div className="text-xs font-semibold uppercase tracking-[0.28em] text-[#F5A623]">
+          <div className="relative bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+            <div className="text-[#888] text-sm">
               {t("common.levelShort")}
             </div>
-            <div className="mt-1 text-5xl font-black leading-none tracking-[-0.04em] text-[#111111] dark:text-[#F8FAFC]">
+            <div className="mt-1 text-white font-bold text-lg leading-none">
               {level}
             </div>
-            <p className="mt-3 max-w-[14rem] text-sm font-semibold uppercase tracking-[0.18em] text-[#334155] dark:text-[#CBD5E1]">
+            <p className="mt-3 max-w-[14rem] text-[#ccc]">
               {t("home.heroMessage")}
             </p>
-            <div className="mt-5 rounded-[1.5rem] bg-[#FFF8D6] p-4 dark:bg-[#111111]">
-              <div className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-[#64748b] dark:text-[#CBD5E1]">
+            <div className="mt-5 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+              <div className="mb-3 flex items-center justify-between text-[#888] text-sm">
                 <span>{t("home.profileStats")}</span>
                 <span>{xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-[#111111] dark:text-[#F8FAFC]">
+              <div className="grid grid-cols-2 gap-3 text-white">
                 <div>
-                  <div className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#64748b] dark:text-[#CBD5E1]">{t("home.weight")}</div>
-                  <div className="mt-1 text-lg font-bold">{weight}<span className="ml-1 text-sm text-[#64748b] dark:text-[#CBD5E1]">kg</span></div>
+                  <div className="text-[#888] text-sm">{t("home.weight")}</div>
+                  <div className="mt-1 text-white font-bold text-lg">{weight}<span className="ml-1 text-[#888] text-sm">kg</span></div>
                 </div>
                 <div>
-                  <div className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#64748b] dark:text-[#CBD5E1]">{t("home.height")}</div>
-                  <div className="mt-1 text-lg font-bold">{height}<span className="ml-1 text-sm text-[#64748b] dark:text-[#CBD5E1]">cm</span></div>
+                  <div className="text-[#888] text-sm">{t("home.height")}</div>
+                  <div className="mt-1 text-white font-bold text-lg">{height}<span className="ml-1 text-[#888] text-sm">cm</span></div>
                 </div>
               </div>
             </div>
@@ -212,31 +212,31 @@ export default function AvatarSection({
       {isEditOpen && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 px-6">
           <div
-            className="w-full max-w-[280px] rounded-[1.75rem] bg-white p-5 shadow-[0_24px_48px_rgba(15,23,42,0.24)]"
+            className="w-full max-w-[280px] bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
             style={{
               border: "1px solid rgba(148, 163, 184, 0.2)",
             }}
           >
-            <div className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#F5A623]">{t("home.editProfile")}</div>
+            <div className="mb-3 text-white font-bold text-lg">{t("home.editProfile")}</div>
             <div className="space-y-3">
               <label className="block">
-                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t("home.weight")}</div>
+                <div className="mb-1 text-[#888] text-sm">{t("home.weight")}</div>
                 <input
                   type="number"
                   inputMode="numeric"
                   value={draftWeight}
                   onChange={(event) => setDraftWeight(event.target.value)}
-                  className="w-full rounded-2xl border border-[#FDE7B0] bg-[#FFFBEA] px-3 py-3 text-sm font-semibold text-[#111111] outline-none"
+                  className="w-full bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc] outline-none"
                 />
               </label>
               <label className="block">
-                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t("home.height")}</div>
+                <div className="mb-1 text-[#888] text-sm">{t("home.height")}</div>
                 <input
                   type="number"
                   inputMode="numeric"
                   value={draftHeight}
                   onChange={(event) => setDraftHeight(event.target.value)}
-                  className="w-full rounded-2xl border border-[#FDE7B0] bg-[#FFFBEA] px-3 py-3 text-sm font-semibold text-[#111111] outline-none"
+                  className="w-full bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#ccc] outline-none"
                 />
               </label>
             </div>
@@ -244,14 +244,14 @@ export default function AvatarSection({
               <button
                 type="button"
                 onClick={() => setIsEditOpen(false)}
-                className="rounded-full bg-[#e2e8f0] px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#334155]"
+                className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2"
               >
                 {t("common.close")}
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="rounded-full bg-[#F5A623] px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-[0_12px_24px_rgba(245,166,35,0.28)]"
+                className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2"
               >
                 {t("common.save")}
               </button>

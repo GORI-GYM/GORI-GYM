@@ -115,58 +115,58 @@ export default function SocialPage({ profile }: SocialPageProps) {
   }
 
   if (loading) {
-    return <div className="px-4 py-8 text-center text-sm text-slate-500">読み込み中...</div>
+    return <div className="bg-[#0a0a0a] px-4 py-8 text-center text-[#888] text-sm">読み込み中...</div>
   }
 
   if (!user) {
     return (
       <div className="min-h-full bg-[#0a0a0a] px-4 py-8">
-        <div className="rounded-[28px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.12),rgba(255,255,255,0.04))] p-6 text-center shadow-[0_18px_40px_rgba(245,166,35,0.12)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5A623]/15 text-[#F5A623]">
+        <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-center">
+          <div className="mx-auto bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 flex h-16 w-16 items-center justify-center text-[#F5A623]">
             <IconUsers className="h-8 w-8" />
           </div>
-          <h1 className="mt-4 text-2xl font-black text-white">SOCIAL</h1>
-          <p className="mt-3 text-sm leading-6 text-white/72">ログインするとフレンド管理とゴリラ閲覧が使えます。</p>
+          <h1 className="mt-4 text-white font-bold text-lg">SOCIAL</h1>
+          <p className="mt-3 text-[#ccc]">ログインするとフレンド管理とゴリラ閲覧が使えます。</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white">
+    <div className="min-h-full bg-[#0a0a0a] px-4 py-6 text-white space-y-6">
       <motion.section
-        className="rounded-[30px] border border-[#F5A623]/30 bg-[linear-gradient(180deg,rgba(245,166,35,0.18),rgba(255,255,255,0.04))] p-5 shadow-[0_20px_48px_rgba(245,166,35,0.14)]"
+        className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">SOCIAL HQ</div>
-        <h1 className="mt-2 text-2xl font-black">フレンド & ゴリラ</h1>
-        <p className="mt-2 text-sm leading-6 text-white/70">受信リクエストの承認、フレンド一覧、相手の成長状況をここで確認できます。</p>
-        {message ? <p className="mt-3 text-sm text-[#FFE7B0]">{message}</p> : null}
+        <div className="text-[#888] text-sm">SOCIAL HQ</div>
+        <h1 className="mt-2 text-white font-bold text-lg">フレンド & ゴリラ</h1>
+        <p className="mt-2 text-[#ccc]">受信リクエストの承認、フレンド一覧、相手の成長状況をここで確認できます。</p>
+        {message ? <p className="mt-3 text-[#ccc]">{message}</p> : null}
       </motion.section>
 
-      <section className="mt-5 rounded-[28px] border border-[#F5A623]/20 bg-white/[0.04] p-5">
+      <section className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black">受信リクエスト</h2>
-          <span className="rounded-full bg-[#F5A623]/15 px-3 py-1 text-xs font-bold text-[#F5A623]">{requests.length}件</span>
+          <h2 className="text-white font-bold text-lg">受信リクエスト</h2>
+          <span className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2">{requests.length}件</span>
         </div>
         <div className="mt-4 space-y-3">
           {requests.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#F5A623]/20 px-4 py-5 text-sm text-white/60">未処理のリクエストはありません。</div>
+            <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#888] text-sm">未処理のリクエストはありません。</div>
           ) : (
             requests.map((request) => (
-              <article key={request.id} className="rounded-[24px] border border-[#F5A623]/20 bg-black/25 p-4">
+              <article key={request.id} className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-lg font-black">{request.fromProfile?.displayName}</div>
-                    <div className="mt-1 text-sm text-[#FFE7B0]">Lv.{request.fromProfile?.level} / {request.fromProfile?.friendCode}</div>
+                    <div className="text-white font-bold text-lg">{request.fromProfile?.displayName}</div>
+                    <div className="mt-1 text-[#888] text-sm">Lv.{request.fromProfile?.level} / {request.fromProfile?.friendCode}</div>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       disabled={busyRequestId === request.id}
                       onClick={() => void handleRequestAction(request.id, "accepted")}
-                      className="rounded-2xl bg-[#F5A623] px-4 py-2 text-sm font-black text-[#0a0a0a] disabled:opacity-60"
+                      className="bg-[#F5A623] text-black font-bold rounded-lg px-4 py-2 disabled:opacity-60"
                     >
                       承認
                     </button>
@@ -174,7 +174,7 @@ export default function SocialPage({ profile }: SocialPageProps) {
                       type="button"
                       disabled={busyRequestId === request.id}
                       onClick={() => void handleRequestAction(request.id, "rejected")}
-                      className="rounded-2xl border border-[#F5A623]/30 bg-transparent px-4 py-2 text-sm font-bold text-[#F5A623] disabled:opacity-60"
+                      className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2 disabled:opacity-60"
                     >
                       拒否
                     </button>
@@ -186,24 +186,24 @@ export default function SocialPage({ profile }: SocialPageProps) {
         </div>
       </section>
 
-      <section className="mt-5 rounded-[28px] border border-[#F5A623]/20 bg-white/[0.04] p-5">
-        <h2 className="text-lg font-black">フレンド一覧</h2>
+      <section className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+        <h2 className="text-white font-bold text-lg">フレンド一覧</h2>
         <div className="mt-4 space-y-3">
           {friends.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#F5A623]/20 px-4 py-5 text-sm text-white/60">まだフレンドがいません。プロフィール画面から仲間を探しましょう。</div>
+            <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#888] text-sm">まだフレンドがいません。プロフィール画面から仲間を探しましょう。</div>
           ) : (
             friends.map((friend) => (
               <button
                 key={friend.uid}
                 type="button"
                 onClick={() => void handleSelectFriend(friend.uid)}
-                className="flex w-full items-center justify-between rounded-[24px] border border-[#F5A623]/20 bg-[linear-gradient(180deg,rgba(245,166,35,0.12),rgba(255,255,255,0.03))] p-4 text-left transition hover:border-[#F5A623]/40"
+                className="flex w-full items-center justify-between bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-left transition"
               >
                 <div>
-                  <div className="text-lg font-black text-white">{friend.displayName}</div>
-                  <div className="mt-1 text-sm text-[#FFE7B0]">ゴリラレベル Lv.{friend.level}</div>
+                  <div className="text-white font-bold text-lg">{friend.displayName}</div>
+                  <div className="mt-1 text-[#888] text-sm">ゴリラレベル Lv.{friend.level}</div>
                 </div>
-                <div className="text-sm font-bold text-[#F5A623]">閲覧する</div>
+                <div className="border border-[#F5A623] text-[#F5A623] rounded-lg px-4 py-2">閲覧する</div>
               </button>
             ))
           )}
@@ -211,12 +211,12 @@ export default function SocialPage({ profile }: SocialPageProps) {
       </section>
 
       {selectedFriend ? (
-        <section className="mt-5 rounded-[30px] border border-[#F5A623]/25 bg-[linear-gradient(180deg,rgba(245,166,35,0.14),rgba(255,255,255,0.04))] p-5 shadow-[0_18px_40px_rgba(245,166,35,0.12)]">
+        <section className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">FRIEND GORILLA</div>
-              <h2 className="mt-2 text-2xl font-black">{selectedFriend.displayName}</h2>
-              <p className="mt-2 text-sm text-white/70">Lv.{selectedFriend.level} / 総XP {selectedFriend.xp.toLocaleString()} / トレ日数 {selectedFriend.trainingDays}日</p>
+              <div className="text-[#888] text-sm">FRIEND GORILLA</div>
+              <h2 className="mt-2 text-white font-bold text-lg">{selectedFriend.displayName}</h2>
+              <p className="mt-2 text-[#ccc]">Lv.{selectedFriend.level} / 総XP {selectedFriend.xp.toLocaleString()} / トレ日数 {selectedFriend.trainingDays}日</p>
             </div>
             <img
               src={getCharacterGrowthImage("gorilla", Math.min(5, Math.max(1, selectedFriend.level >= 25 ? 5 : Math.ceil(selectedFriend.level / 5))))}
@@ -225,28 +225,28 @@ export default function SocialPage({ profile }: SocialPageProps) {
             />
           </div>
 
-          <div className="mt-5 rounded-[24px] border border-[#F5A623]/20 bg-black/25 p-4">
-            <div className="text-sm font-bold text-[#FFE7B0]">最近のトレーニング記録</div>
+          <div className="mt-5 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
+            <div className="text-white font-bold text-lg">最近のトレーニング記録</div>
             <div className="mt-3 space-y-3">
               {selectedFriend.trainingEntries.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#F5A623]/20 px-4 py-5 text-sm text-white/60">まだ公開できるトレーニング記録がありません。</div>
+                <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4 text-[#888] text-sm">まだ公開できるトレーニング記録がありません。</div>
               ) : (
                 selectedFriend.trainingEntries.map((entry) => {
                   const likedByCurrentUser = Boolean(user && (likesByEntry[entry.id] ?? []).includes(user.uid))
                   const totalLikes = likesByEntry[entry.id]?.length ?? 0
                   const totalVolume = entry.sets.reduce((sum, set) => sum + set.weight * (set.reps ?? 0), 0)
                   return (
-                    <article key={entry.id} className="rounded-[22px] border border-[#F5A623]/15 bg-white/[0.04] p-4">
+                    <article key={entry.id} className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-base font-black">{entry.exerciseName}</div>
-                          <div className="mt-1 text-sm text-white/65">{entry.bodyPart} / {entry.sets.length}セット / 総ボリューム {totalVolume.toLocaleString()}</div>
+                          <div className="text-white font-bold text-lg">{entry.exerciseName}</div>
+                          <div className="mt-1 text-[#888] text-sm">{entry.bodyPart} / {entry.sets.length}セット / 総ボリューム {totalVolume.toLocaleString()}</div>
                         </div>
                         <button
                           type="button"
                           disabled={busyLikeId === entry.id}
                           onClick={() => void handleToggleLike(entry.id)}
-                          className={`rounded-2xl px-4 py-2 text-sm font-black transition ${likedByCurrentUser ? "bg-[#F5A623] text-[#0a0a0a]" : "border border-[#F5A623]/30 bg-transparent text-[#F5A623]"} disabled:opacity-60`}
+                          className={`rounded-lg px-4 py-2 text-sm transition ${likedByCurrentUser ? "bg-[#F5A623] text-black font-bold" : "border border-[#F5A623] text-[#F5A623]"} disabled:opacity-60`}
                         >
                           ♥ {totalLikes}
                         </button>
