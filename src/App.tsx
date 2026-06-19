@@ -22,6 +22,7 @@ import { mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscr
 import { initialRoutines, type Routine } from "@/sections/routineData"
 import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMRecords, calculateBig3Records, calculateBig3OneRMRecords, type BodyPartXPMap, calculateBodyPartXPMap, calculateTotalXP, getLevelFromXP, LEVEL_THRESHOLDS, MAX_LEVEL, XP_PER_LEVEL } from "@/sections/TrainingPage"
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
+import { applyTrainingCompletion, calculateWeeklyProgressSummary, getStoredWeeklyProgressState, loadWeeklyProgressFromFirestore, persistWeeklyProgressState, resolveWeeklyProgress, saveWeeklyProgressToFirestore, type WeeklyProgressState } from "@/utils/weeklyProgress"
 
 const THEME_STORAGE_KEY = "gym-quest-theme"
 const ROUTINES_STORAGE_KEY = "gym-quest-routines"
@@ -344,6 +345,8 @@ function AppContent() {
   const [selectedCharacter] = useState<CharacterId>("gorilla")
   const [levelUpOverlayLevel, setLevelUpOverlayLevel] = useState<number | null>(null)
   const [pendingFriendRequestCount, setPendingFriendRequestCount] = useState(0)
+  const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgressState>(getStoredWeeklyProgressState)
+  const [showWeeklyGoalModal, setShowWeeklyGoalModal] = useState(false)
   const level = useMemo(() => getLevelFromXP(xp), [xp])
   const nextLevelXp = useMemo(() => getNextLevelXp(level), [level])
   const todayTrainingSummary = useMemo(() => getTodayTrainingSummary(trainingEntries), [trainingEntries])
@@ -356,6 +359,8 @@ function AppContent() {
     () => getMergedMonthlyCharacterHistory(storedMonthlyHistory, computedMonthlyHistory),
     [computedMonthlyHistory, storedMonthlyHistory],
   )
+  const resolvedWeeklyProgress = useMemo(() => resolveWeeklyProgress(trainingEntries, weeklyProgress), [trainingEntries, weeklyProgress])
+  const weeklyProgressSummary = useMemo(() => calculateWeeklyProgressSummary(trainingEntries, resolvedWeeklyProgress), [resolvedWeeklyProgress, trainingEntries])
   const previousLevelRef = useRef(level)
   const isApplyingRemoteSnapshotRef = useRef(false)
   const lastSyncedTrainingEntriesRef = useRef<string>("")
@@ -386,6 +391,13 @@ function AppContent() {
   useEffect(() => {
     window.localStorage.setItem(ROUTINES_STORAGE_KEY, JSON.stringify(routines))
   }, [routines])
+
+  useEffect(() => {
+    persistWeeklyProgressState(resolvedWeeklyProgress)
+    if (JSON.stringify(resolvedWeeklyProgress) !== JSON.stringify(weeklyProgress)) {
+      setWeeklyProgress(resolvedWeeklyProgress)
+    }
+  }, [resolvedWeeklyProgress, weeklyProgress])
 
   useEffect(() => {
     const nextHistory = buildMonthlyCharacterHistoryRecord(computedMonthlyHistory)
@@ -455,9 +467,16 @@ function AppContent() {
     let isMounted = true
 
     const syncUserData = async () => {
+      const remoteWeeklyProgress = await loadWeeklyProgressFromFirestore(user)
+      if (remoteWeeklyProgress) {
+        setWeeklyProgress(remoteWeeklyProgress)
+      }
       const mergedData = await mergeLocalDataToFirestore(user, {
         trainingEntries,
-        profile: userProfile,
+        profile: {
+          ...userProfile,
+          ...weeklyProgress,
+        },
       })
 
       if (!isMounted) {
@@ -488,6 +507,14 @@ function AppContent() {
         lastSyncedTrainingEntriesRef.current = JSON.stringify(payload.trainingEntries)
         lastSyncedProfileRef.current = JSON.stringify(payload.profile)
         setUserProfile((current) => ({ ...current, ...payload.profile }))
+        setWeeklyProgress((current) => ({
+          ...current,
+          weeklyGoal: payload.profile.weeklyGoal ?? current.weeklyGoal,
+          currentStreak: payload.profile.currentStreak ?? current.currentStreak,
+          weeklyXP: payload.profile.weeklyXP ?? current.weeklyXP,
+          streakFreezeAvailable: payload.profile.streakFreezeAvailable ?? current.streakFreezeAvailable,
+          weekStartDate: payload.profile.weekStartDate ?? current.weekStartDate,
+        }))
         window.setTimeout(() => {
           isApplyingRemoteSnapshotRef.current = false
         }, 0)
@@ -525,6 +552,11 @@ function AppContent() {
       level,
       xp,
       trainingDays: getTrainingDaysCount(trainingEntries),
+      weeklyGoal: resolvedWeeklyProgress.weeklyGoal,
+      currentStreak: resolvedWeeklyProgress.currentStreak,
+      weeklyXP: resolvedWeeklyProgress.weeklyXP,
+      streakFreezeAvailable: resolvedWeeklyProgress.streakFreezeAvailable,
+      weekStartDate: resolvedWeeklyProgress.weekStartDate,
     }
     const serializedProfile = JSON.stringify(nextProfile)
     if (serializedProfile === lastSyncedProfileRef.current) {
@@ -533,7 +565,12 @@ function AppContent() {
 
     lastSyncedProfileRef.current = serializedProfile
     void saveUserProfile(user.uid, nextProfile)
-  }, [level, trainingEntries, user, xp])
+    void saveWeeklyProgressToFirestore(user, resolvedWeeklyProgress)
+  }, [level, resolvedWeeklyProgress, trainingEntries, user, xp])
+
+  const handleTrainingSaved = (targetDateKey: string) => {
+    setWeeklyProgress((current) => applyTrainingCompletion(trainingEntries, current, targetDateKey).nextState)
+  }
 
   const handleReturnFromWorkout = () => {
     setWorkoutActive(false)
@@ -619,6 +656,7 @@ function AppContent() {
           pendingStartRoutine={pendingStartRoutine}
           onPendingStartRoutineConsumed={() => setPendingStartRoutine(null)}
           selectedDateKey={selectedTrainingDateKey}
+          onTrainingSaved={handleTrainingSaved}
         />
       )
     }
@@ -668,7 +706,35 @@ function AppContent() {
           big3Records={big3Records}
           big3OneRMRecords={big3OneRMRecords}
           motivationMessage={t("home.motivation")}
+          weeklyProgress={weeklyProgressSummary}
+          onOpenGoalSettings={() => setShowWeeklyGoalModal(true)}
         />
+        {showWeeklyGoalModal && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
+            <div className="w-full max-w-sm rounded-[28px] border border-[#F5A623]/30 bg-white p-5 shadow-[0_24px_60px_rgba(0,0,0,0.28)] dark:bg-[#111111]">
+              <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#B7791F]">週間目標</div>
+              <h3 className="mt-2 text-xl font-black text-[#0a0a0a] dark:text-white">週に何回トレーニングする？</h3>
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                {Array.from({ length: 7 }, (_, index) => index + 1).map((goal) => (
+                  <button
+                    key={goal}
+                    type="button"
+                    onClick={() => {
+                      setWeeklyProgress((current) => ({ ...current, weeklyGoal: goal }))
+                      setShowWeeklyGoalModal(false)
+                    }}
+                    className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${weeklyProgressSummary.weeklyGoal === goal ? "border-[#F5A623] bg-[#F5A623] text-[#0a0a0a]" : "border-slate-200 bg-[#FFF8E7] text-[#8A5A00] dark:border-[#333333] dark:bg-[#171717] dark:text-[#FFD27A]"}`}
+                  >
+                    週{goal}
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={() => setShowWeeklyGoalModal(false)} className="mt-4 w-full rounded-2xl bg-[#0a0a0a] px-4 py-3 text-sm font-bold text-white dark:bg-[#F5A623] dark:text-[#0a0a0a]">
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
         <div className="h-4 bg-[var(--color-bg)] dark:bg-[var(--color-dark-bg)]" />
       </>
     )

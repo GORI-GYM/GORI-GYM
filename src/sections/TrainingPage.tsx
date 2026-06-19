@@ -80,6 +80,7 @@ interface TrainingPageProps {
   pendingStartRoutine?: Routine | null
   onPendingStartRoutineConsumed?: () => void
   selectedDateKey?: string | null
+  onTrainingSaved?: (targetDateKey: string) => void
 }
 
 interface SuggestionSummary {
@@ -418,6 +419,7 @@ export default function TrainingPage({
   pendingStartRoutine = null,
   onPendingStartRoutineConsumed,
   selectedDateKey = null,
+  onTrainingSaved,
 }: TrainingPageProps) {
   const { t } = useTranslation()
   const hasEntries = entries.length > 0
@@ -774,6 +776,7 @@ export default function TrainingPage({
     onBig3RecordsChange(calculateBig3Records(nextEntries))
     onXpChange(calculateTotalXP(nextEntries))
     onBodyPartXPChange(calculateBodyPartXPMap(nextEntries))
+    onTrainingSaved?.(targetDateKey)
     setSessionExercises([])
     setActiveView("history")
     resetForm()

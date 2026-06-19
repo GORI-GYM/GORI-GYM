@@ -30,6 +30,11 @@ export interface UserProfile {
   trainingDays: number
   friendCode?: string
   friends?: string[]
+  weeklyGoal?: number
+  currentStreak?: number
+  weeklyXP?: number
+  streakFreezeAvailable?: boolean
+  weekStartDate?: string
 }
 
 interface FirestoreTrainingLog extends TrainingEntry {

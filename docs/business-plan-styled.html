@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GORU GYM 事業企画書</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #0a0a0a; color: #e0e0e0; line-height: 1.8; padding: 40px 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { color: #F5A623; font-size: 2.2em; text-align: center; margin-bottom: 10px; letter-spacing: 2px; }
+  .subtitle { text-align: center; color: #888; font-size: 0.95em; margin-bottom: 50px; }
+  h2 { color: #F5A623; font-size: 1.5em; margin-top: 50px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid #F5A623; }
+  h3 { color: #fff; font-size: 1.15em; margin-top: 30px; margin-bottom: 12px; }
+  h4 { color: #F5A623; font-size: 1em; margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 14px; color: #ccc; }
+  ul, ol { margin: 10px 0 14px 24px; color: #ccc; }
+  li { margin-bottom: 6px; }
+  strong { color: #F5A623; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 0.92em; }
+  th { background: #1a1a1a; color: #F5A623; padding: 10px 12px; text-align: left; border: 1px solid #333; }
+  td { background: #111; padding: 10px 12px; border: 1px solid #333; color: #ccc; }
+  td[align="right"], th[align="right"] { text-align: right; }
+  tr:hover td { background: #1a1a1a; }
+  a { color: #F5A623; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .toc { background: #111; border: 1px solid #333; border-radius: 8px; padding: 24px 30px; margin-bottom: 40px; }
+  .toc h3 { color: #F5A623; margin-top: 0; }
+  .toc ol { color: #ccc; }
+  .toc a { color: #ccc; }
+  .toc a:hover { color: #F5A623; }
+  .highlight { background: linear-gradient(90deg, rgba(245,166,35,0.1), transparent); border-left: 3px solid #F5A623; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; }
+  @media print { body { background: #fff; color: #222; } h1, h2, h4, strong { color: #333; } th { background: #eee; color: #333; } td { background: #fff; color: #333; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>GORU GYM 事業企画書</h1>
+<p class="subtitle">筋トレ × ゴリラ育成 × 継続ゲーム ― 初心者の離脱を、ゲームの力で解決する</p>
+
+<div class="toc">
+<h3>目次</h3>
+<ol>
+<li><a href="#sec1">エグゼクティブサマリー</a></li>
+<li><a href="#sec2">課題と市場機会</a></li>
+<li><a href="#sec3">プロダクト概要</a></li>
+<li><a href="#sec4">競合分析</a></li>
+<li><a href="#sec5">ターゲットユーザーペルソナ</a></li>
+<li><a href="#sec6">ビジネスモデル・収益計画</a></li>
+<li><a href="#sec7">マーケティング戦略</a></li>
+<li><a href="#sec8">開発ロードマップ</a></li>
+<li><a href="#sec9">チーム体制</a></li>
+<li><a href="#sec10">財務予測（3年間）</a></li>
+<li><a href="#sec11">リスクと対策</a></li>
+<li><a href="#sec12">まとめ・ビジョン</a></li>
+</ol>
+</div>
+
+<h2 id="sec1">1. エグゼクティブサマリー</h2>
+<p>GORU GYMは、「筋トレ × ゴリラ育成 × 継続ゲーム」を融合した初心者向けトレーニング継続支援アプリである。PWAとして開発されており、ログイン不要でも即時利用できる軽量性と、ゲーム感覚で継続を促す設計を強みとする。現在は <a href="https://gori-gym.vercel.app">https://gori-gym.vercel.app</a> で公開済みであり、筋トレ記録、ゴリラ育成、AI応答、ランキング、フレンド、ギルドなど、継続支援の基盤機能はすでに実装済みである。</p>
+<p>本事業が解決するのは、ジム初心者の極めて高い離脱率である。多くの初心者は入会後3日〜2週間で通わなくなる傾向があり、その背景には「何をすればよいかわからない」「フォームが不安」「成果実感まで時間がかかる」「ジム空間への心理的ハードルが高い」といった構造的課題がある。</p>
+<div class="highlight">
+<p>GORU GYMは、Duolingoの継続設計思想を筋トレ領域に応用し、「毎日やる」ではなく<strong>「週4回続ける」</strong>ことを最適化する。記録管理ではなく行動変容を目的とし、ゴリラ育成や非同期対戦、ギルド対抗戦などのエンタメ要素を通じて、初心者が成果実感を得る前に離脱してしまう谷を越えさせることを目指す。</p>
+</div>
+<p>収益モデルは、フリーミアム課金、トレーナーマッチング手数料、企業ジム向けB2B導入の3本柱を想定する。</p>
+
+<h2 id="sec2">2. 課題と市場機会</h2>
+<h3>2.1 解決すべき課題</h3>
+<p>ジム市場は拡大している一方で、初心者の継続率には大きな課題がある。特に初心者は以下の理由で離脱しやすい。</p>
+<ul>
+<li>何の種目から始めればよいかわからない</li>
+<li>マシンの使い方やフォームに不安がある</li>
+<li>体型変化や筋力向上の成果が見えるまで時間がかかる</li>
+<li>周囲が経験者に見えて心理的に萎縮する</li>
+<li>記録アプリを入れても入力負荷が高く、習慣化前に面倒になる</li>
+</ul>
+
+<h3>2.2 市場背景</h3>
+<p>日本のフィットネス市場は、24時間ジムの普及、健康経営需要、ボディメイク文化の浸透を背景に拡大基調にある。国内フィットネスクラブ関連市場は数千億円規模と推定される。</p>
+
+<h3>2.3 TAM / SAM / SOM</h3>
+<table>
+<tr><th>区分</th><th>計算</th><th align="right">規模</th></tr>
+<tr><td><strong>TAM</strong></td><td>500万人 × 70% × 6,000円</td><td align="right"><strong>約210億円/年</strong></td></tr>
+<tr><td><strong>SAM</strong></td><td>500万人 × 20% × 60% × 6,000円</td><td align="right"><strong>約36億円/年</strong></td></tr>
+<tr><td><strong>SOM</strong></td><td>SAMの1〜3%</td><td align="right"><strong>約0.36〜1.08億円/年</strong></td></tr>
+</table>
+
+<h2 id="sec3">3. プロダクト概要</h2>
+<h3>3.1 コンセプト</h3>
+<p>「Duolingoの筋トレ版」。毎日実施を強制するのではなく、週4回の達成を最適化する。ユーザーはトレーニングを行うことでゴリラを育成し、継続そのものが楽しくなる体験を得る。</p>
+
+<h3>3.2 実装済み機能（Ver1〜2）</h3>
+<ul>
+<li>筋トレ記録 / ゴリラ育成（Lv5、毎月リセット） / AIゴリラ応答</li>
+<li>PWA対応 / スプラッシュ画面 / データバックアップ</li>
+<li>Firebase認証（Google / メール） / Firestoreデータ同期</li>
+<li>フレンド機能（リクエスト / 一覧 / ゴリラ閲覧 / いいね）</li>
+<li>ランキング（月間総重量 / 日数、全体 / フレンド内）</li>
+<li>ギルド機能（5人チーム、統計、チャット）</li>
+</ul>
+
+<h3>3.3 ロードマップ</h3>
+<table>
+<tr><th>Version</th><th>テーマ</th><th>主な内容</th></tr>
+<tr><td><strong>Ver3</strong></td><td>Duolingo式継続設計</td><td>今日のミッション / 週間ストリーク+XP / ゴリラ反応強化 / レベルアップ演出 / ゴリラ対決 / ギルド対抗戦</td></tr>
+<tr><td><strong>Ver4</strong></td><td>初心者ガイド</td><td>マシン説明 / 重量自動提案 / フォームガイド</td></tr>
+<tr><td><strong>Ver5</strong></td><td>AIトレーナー+収益化</td><td>オンライントレーナー / プレミアム / 広告</td></tr>
+<tr><td><strong>Ver6</strong></td><td>食事・体重管理</td><td>AI食事分析 / 体重管理グラフ</td></tr>
+</table>
+
+<h2 id="sec4">4. 競合分析</h2>
+<table>
+<tr><th>サービス</th><th>主対象</th><th>主な価値</th><th>強み</th><th>弱み</th></tr>
+<tr><td>Hevy</td><td>中級者〜上級者</td><td>高機能な筋トレ記録</td><td>UIが洗練</td><td>初心者には入力負荷が高い</td></tr>
+<tr><td>Strong</td><td>中級者〜上級者</td><td>シンプルな記録管理</td><td>定番で信頼感</td><td>ゲーム性が弱い</td></tr>
+<tr><td>JEFIT</td><td>中級者〜上級者</td><td>種目DBと詳細管理</td><td>機能が豊富</td><td>初心者には複雑</td></tr>
+<tr><td>Nike Training</td><td>初心者〜中級者</td><td>動画ベースの指導</td><td>ブランド力</td><td>ゲーム設計が弱い</td></tr>
+<tr><td><strong>GORU GYM</strong></td><td><strong>ジム初心者</strong></td><td><strong>継続ゲーム+育成</strong></td><td><strong>即利用・ゲーム性</strong></td><td>ブランド発展途上</td></tr>
+</table>
+
+<h2 id="sec5">5. ターゲットユーザーペルソナ</h2>
+<h3>ペルソナA：24歳 男性 会社員</h3>
+<p>24時間ジムに入会したばかり。何をすればよいかわからず、周囲の視線が気になる。ゲーム好きでSNS利用頻度が高い。</p>
+<h3>ペルソナB：29歳 女性 事務職</h3>
+<p>運動不足解消が目的。器具に不慣れでフォームが不安。短時間で達成感を得たい。</p>
+<h3>ペルソナC：21歳 学生</h3>
+<p>友人と一緒に筋トレを続けたい。共有・競争・ネタ性に反応しやすい。</p>
+<div class="highlight">
+<p>最重要KPIは記録数ではなく、<strong>週次継続率・4週間継続率・8週間継続率</strong>。</p>
+</div>
+
+<h2 id="sec6">6. ビジネスモデル・収益計画</h2>
+<h3>収益モデル 3本柱</h3>
+<table>
+<tr><th>モデル</th><th>内容</th><th>想定単価</th></tr>
+<tr><td><strong>フリーミアム</strong></td><td>広告非表示 / 追加ゴリラスキン / 詳細分析 / AIアドバイス</td><td>月額480〜980円</td></tr>
+<tr><td><strong>トレーナーマッチング</strong></td><td>初心者とオンライントレーナーを接続</td><td>手数料15〜25%</td></tr>
+<tr><td><strong>B2B導入</strong></td><td>企業ジム / 福利厚生 / 健康経営</td><td>月額5〜30万円/法人</td></tr>
+</table>
+
+<h2 id="sec7">7. マーケティング戦略</h2>
+<p>「筋トレ初心者あるある」と「ゴリラ育成の面白さ」を掛け合わせたSNS自然流入を重視。</p>
+<h3>SNS拡散設計</h3>
+<ul>
+<li>育成したゴリラの見た目変化をシェア</li>
+<li>週間ストリーク達成画像をシェア</li>
+<li>ギルド順位や対戦結果をシェア</li>
+<li>月末リセット時の成長結果をカード化して共有</li>
+</ul>
+<h3>ブランドメッセージ</h3>
+<div class="highlight">
+<p>「筋トレが続かない人のためのアプリ」<br>「記録するより、まず続ける」<br>「あなたの筋トレを、ゴリラが見守る」</p>
+</div>
+
+<h2 id="sec8">8. 開発ロードマップ</h2>
+<table>
+<tr><th>時期</th><th>Version</th><th>テーマ</th><th>主な実装</th></tr>
+<tr><td>2026 Q3</td><td>Ver3前半</td><td>継続設計強化</td><td>今日のミッション / 週4ストリーク / XP</td></tr>
+<tr><td>2026 Q4</td><td>Ver3後半</td><td>ゲーム性強化</td><td>ゴリラ反応 / 非同期PvP / ギルド対抗戦</td></tr>
+<tr><td>2027 Q1</td><td>Ver4</td><td>初心者支援</td><td>マシン説明 / 重量提案 / フォームガイド</td></tr>
+<tr><td>2027 Q2</td><td>Ver5前半</td><td>収益化開始</td><td>プレミアム / 広告 / AIトレーナー試験導入</td></tr>
+<tr><td>2027 Q3</td><td>Ver5後半</td><td>マッチング拡張</td><td>オンライントレーナー連携</td></tr>
+<tr><td>2027 Q4</td><td>Ver6</td><td>周辺拡張</td><td>食事分析 / 体重管理グラフ</td></tr>
+</table>
+
+<h2 id="sec9">9. チーム体制</h2>
+<p><strong>個人開発者1名</strong>による開発・企画体制。プロダクト企画、UI/UX設計、フロントエンド/バックエンド開発、ユーザー検証、SNS発信を一人で担当。将来的にデザイナー、AI実装支援、提携トレーナー、B2B営業パートナーとの連携を想定。</p>
+
+<h2 id="sec10">10. 財務予測（3年間）</h2>
+<table>
+<tr><th>項目</th><th align="right">2026年度</th><th align="right">2027年度</th><th align="right">2028年度</th></tr>
+<tr><td>年間平均MAU</td><td align="right">3,000</td><td align="right">20,000</td><td align="right">80,000</td></tr>
+<tr><td>プレミアム転換率</td><td align="right">0%</td><td align="right">3.5%</td><td align="right">5.0%</td></tr>
+<tr><td><strong>売上合計</strong></td><td align="right">約108万円</td><td align="right"><strong>約2,131万円</strong></td><td align="right"><strong>約1億224万円</strong></td></tr>
+<tr><td>コスト合計</td><td align="right">約120〜180万円</td><td align="right">約900万円</td><td align="right">約2,700万円</td></tr>
+<tr><td><strong>営業利益</strong></td><td align="right">約▲12〜72万円</td><td align="right"><strong>約1,231万円</strong></td><td align="right"><strong>約7,524万円</strong></td></tr>
+</table>
+
+<h2 id="sec11">11. リスクと対策</h2>
+<table>
+<tr><th>リスク</th><th>対策</th></tr>
+<tr><td>継続率が想定ほど改善しない</td><td>ミッション設計・通知・初心者ガイドを高速改善</td></tr>
+<tr><td>個人開発のリソース制約</td><td>優先順位集中、外注活用、収益化後に体制補強</td></tr>
+<tr><td>競合の模倣</td><td>初心者特化ブランドとコミュニティ形成を先行</td></tr>
+<tr><td>収益化タイミングの難しさ</td><td>無料価値を維持しつつ段階的に導入</td></tr>
+<tr><td>AI機能の品質課題</td><td>限定機能から導入し、監修・改善を継続</td></tr>
+<tr><td>B2B営業難易度</td><td>B2C継続率データを実績として蓄積</td></tr>
+</table>
+
+<h2 id="sec12">12. まとめ・ビジョン</h2>
+<div class="highlight">
+<p>GORU GYMの本質は、筋トレ記録アプリではなく、<strong>「運動が続かない人を、続けられる人に変える仕組み」</strong>である。</p>
+</div>
+<p>すでに公開済みのPWAとして実装基盤を持ち、ソーシャル機能や育成要素も備えているため、今後はDuolingo式の継続設計を完成させることで、初心者向けフィットネス領域における独自ポジションを確立できる。</p>
+<p>将来的には、初心者向け継続支援アプリから、AIトレーナー、食事分析、法人向け健康経営支援までを包含する<strong>総合フィットネス習慣化プラットフォーム</strong>へ進化することを目指す。</p>
+
+<p style="text-align:center; margin-top:60px; color:#555; font-size:0.85em;">GORU GYM Business Plan &copy; 2026</p>
+
+</div>
+</body>
+</html>
