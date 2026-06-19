@@ -9,8 +9,7 @@ import StatusPanel from "@/sections/StatusPanel"
 import BottomNav from "@/sections/BottomNav"
 import AuthPage from "@/sections/AuthPage"
 import CharacterPage from "@/sections/CharacterPage"
-import ProfilePage from "@/sections/ProfilePage"
-import SocialPage from "@/sections/SocialPage"
+import SocialHubPage from "@/sections/SocialHubPage"
 import RankingPage from "@/sections/RankingPage"
 import TrainingPage from "@/sections/TrainingPage"
 import WorkoutPage from "@/sections/WorkoutPage"
@@ -590,17 +589,18 @@ function AppContent() {
       )
     }
 
-    if (activeTab === "social") {
-      return (
-        <>
-          <ProfilePage profile={userProfile} onProfileChange={setUserProfile} />
-          <SocialPage profile={userProfile} />
-        </>
-      )
-    }
-
     if (activeTab === "ranking") {
       return <RankingPage socialBadgeCount={pendingFriendRequestCount} />
+    }
+
+    if (activeTab === "social") {
+      return (
+        <SocialHubPage
+          profile={userProfile}
+          onProfileChange={setUserProfile}
+          socialBadgeCount={pendingFriendRequestCount}
+        />
+      )
     }
 
     if (activeTab === "training") {

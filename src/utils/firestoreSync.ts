@@ -49,6 +49,43 @@ export interface PublicUserProfile {
   friendCode: string
 }
 
+export interface GuildMemberSummary extends PublicUserProfile {
+  monthlyVolume: number
+}
+
+export interface Guild {
+  id: string
+  name: string
+  leaderId: string
+  members: string[]
+  createdAt?: unknown
+}
+
+export interface GuildInvite {
+  id: string
+  from: string
+  to: string
+  guildId: string
+  status: "pending" | "accepted" | "rejected"
+  timestamp?: unknown
+  guildName?: string
+  fromProfile?: PublicUserProfile
+}
+
+export interface GuildMessage {
+  id: string
+  text: string
+  senderId: string
+  senderName: string
+  timestamp?: unknown
+}
+
+export interface GuildDetails extends Guild {
+  memberProfiles: GuildMemberSummary[]
+  monthlyTotalVolume: number
+  monthlyTrainingDays: number
+}
+
 export interface FriendRequest {
   id: string
   from: string
@@ -98,6 +135,18 @@ function getTrainingLogsCollectionRef(uid: string) {
 
 function getFriendRequestsCollectionRef() {
   return collection(db, "friendRequests")
+}
+
+function getGuildsCollectionRef() {
+  return collection(db, "guilds")
+}
+
+function getGuildInvitesCollectionRef() {
+  return collection(db, "guildInvites")
+}
+
+function getGuildMessagesCollectionRef(guildId: string) {
+  return collection(db, "guilds", guildId, "messages")
 }
 
 function getTrainingEntryIdentity(entry: TrainingEntry) {
@@ -523,6 +572,257 @@ function getCurrentMonthRange() {
     startKey: start.toISOString().slice(0, 10),
     endKey: end.toISOString().slice(0, 10),
   }
+}
+
+async function getUserGuild(uid: string) {
+  const snapshot = await getDocs(getGuildsCollectionRef())
+  const guild = snapshot.docs
+    .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<Guild, "id">) }))
+    .find((entry) => Array.isArray(entry.members) && entry.members.includes(uid))
+
+  return guild ?? null
+}
+
+async function getMonthlyTrainingSummary(uid: string) {
+  const { startKey, endKey } = getCurrentMonthRange()
+  const trainingSnapshot = await getDocs(getTrainingLogsCollectionRef(uid))
+  const monthlyEntries = trainingSnapshot.docs
+    .map((snapshot) => snapshot.data() as TrainingEntry)
+    .filter((entry) => isWithinCurrentMonth(entry, startKey, endKey))
+
+  return {
+    totalVolume: monthlyEntries.reduce((sum, entry) => sum + getEntryVolume(entry), 0),
+    trainingDays: new Set(monthlyEntries.map((entry) => getEntryDateKey(entry))).size,
+  }
+}
+
+export async function createGuild(leaderUid: string, name: string) {
+  const trimmedName = name.trim()
+  if (!trimmedName) {
+    throw new Error("ギルド名を入力してください。")
+  }
+
+  const existingGuild = await getUserGuild(leaderUid)
+  if (existingGuild) {
+    throw new Error("すでにギルドに所属しています。")
+  }
+
+  const guildRef = await addDoc(getGuildsCollectionRef(), {
+    name: trimmedName,
+    leaderId: leaderUid,
+    members: [leaderUid],
+    createdAt: serverTimestamp(),
+  })
+
+  return guildRef.id
+}
+
+export async function getGuildDetails(uid: string) {
+  const guild = await getUserGuild(uid)
+  if (!guild) {
+    return null
+  }
+
+  const memberProfiles = await Promise.all(
+    guild.members.map(async (memberUid) => {
+      const [profile, monthlySummary] = await Promise.all([
+        getPublicUserProfile(memberUid),
+        getMonthlyTrainingSummary(memberUid),
+      ])
+
+      if (!profile) {
+        return null
+      }
+
+      return {
+        ...profile,
+        monthlyVolume: monthlySummary.totalVolume,
+      } satisfies GuildMemberSummary
+    }),
+  )
+
+  const filteredProfiles = memberProfiles.filter(Boolean) as GuildMemberSummary[]
+  const monthlyTotalVolume = filteredProfiles.reduce((sum, member) => sum + member.monthlyVolume, 0)
+  const monthlyTrainingDays = guild.members.length === 0
+    ? 0
+    : (await Promise.all(guild.members.map((memberUid) => getMonthlyTrainingSummary(memberUid))))
+      .reduce((sum, summary) => sum + summary.trainingDays, 0)
+
+  return {
+    ...guild,
+    memberProfiles: filteredProfiles,
+    monthlyTotalVolume,
+    monthlyTrainingDays,
+  } satisfies GuildDetails
+}
+
+export async function getGuildInviteCandidates(uid: string) {
+  const [guild, friends] = await Promise.all([
+    getUserGuild(uid),
+    getFriends(uid),
+  ])
+
+  if (!guild) {
+    throw new Error("ギルドが見つかりません。")
+  }
+
+  if (guild.leaderId !== uid) {
+    throw new Error("招待できるのはリーダーのみです。")
+  }
+
+  const candidates = await Promise.all(
+    friends.map(async (friend) => {
+      const friendGuild = await getUserGuild(friend.uid)
+      return friendGuild ? null : friend
+    }),
+  )
+
+  return candidates.filter((candidate) => candidate && !guild.members.includes(candidate.uid)) as PublicUserProfile[]
+}
+
+export async function sendGuildInvite(fromUid: string, toUid: string, guildId: string) {
+  if (fromUid === toUid) {
+    throw new Error("自分自身は招待できません。")
+  }
+
+  const [guildSnapshot, senderGuild, receiverGuild] = await Promise.all([
+    getDoc(doc(db, "guilds", guildId)),
+    getUserGuild(fromUid),
+    getUserGuild(toUid),
+  ])
+
+  if (!guildSnapshot.exists()) {
+    throw new Error("ギルドが見つかりません。")
+  }
+
+  const guild = { id: guildSnapshot.id, ...(guildSnapshot.data() as Omit<Guild, "id">) }
+  if (!senderGuild || senderGuild.id !== guildId || guild.leaderId !== fromUid) {
+    throw new Error("招待できるのは所属ギルドのリーダーのみです。")
+  }
+
+  if (guild.members.length >= 5) {
+    throw new Error("ギルドは最大5人までです。")
+  }
+
+  if (receiverGuild) {
+    throw new Error("相手はすでに別のギルドに所属しています。")
+  }
+
+  const existingInvites = await getDocs(query(getGuildInvitesCollectionRef(), orderBy("timestamp", "desc"), limit(100)))
+  const duplicate = existingInvites.docs.find((snapshot) => {
+    const data = snapshot.data() as Omit<GuildInvite, "id">
+    return data.guildId === guildId && data.to === toUid && data.status === "pending"
+  })
+
+  if (duplicate) {
+    throw new Error("このフレンドにはすでに招待を送っています。")
+  }
+
+  await addDoc(getGuildInvitesCollectionRef(), {
+    from: fromUid,
+    to: toUid,
+    guildId,
+    status: "pending",
+    timestamp: serverTimestamp(),
+  })
+}
+
+export async function getIncomingGuildInvites(uid: string) {
+  const snapshot = await getDocs(query(getGuildInvitesCollectionRef(), orderBy("timestamp", "desc"), limit(100)))
+  const invites = await Promise.all(
+    snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<GuildInvite, "id">) }))
+      .filter((invite) => invite.to === uid && invite.status === "pending")
+      .map(async (invite) => {
+        const [fromProfile, guildSnapshot] = await Promise.all([
+          getPublicUserProfile(invite.from),
+          getDoc(doc(db, "guilds", invite.guildId)),
+        ])
+
+        return {
+          ...invite,
+          fromProfile: fromProfile ?? undefined,
+          guildName: guildSnapshot.exists() ? (guildSnapshot.data() as Guild).name : "UNKNOWN GUILD",
+        } satisfies GuildInvite
+      }),
+  )
+
+  return invites
+}
+
+export async function respondToGuildInvite(inviteId: string, action: "accepted" | "rejected") {
+  const inviteRef = doc(db, "guildInvites", inviteId)
+
+  await runTransaction(db, async (transaction) => {
+    const inviteSnapshot = await transaction.get(inviteRef)
+    if (!inviteSnapshot.exists()) {
+      throw new Error("ギルド招待が見つかりません。")
+    }
+
+    const invite = inviteSnapshot.data() as Omit<GuildInvite, "id">
+    if (invite.status !== "pending") {
+      throw new Error("この招待はすでに処理済みです。")
+    }
+
+    transaction.set(inviteRef, { status: action }, { merge: true })
+
+    if (action === "accepted") {
+      const guildRef = doc(db, "guilds", invite.guildId)
+      const [guildSnapshot, userGuild] = await Promise.all([
+        transaction.get(guildRef),
+        getUserGuild(invite.to),
+      ])
+
+      if (userGuild) {
+        throw new Error("すでに別のギルドに所属しています。")
+      }
+
+      if (!guildSnapshot.exists()) {
+        throw new Error("ギルドが見つかりません。")
+      }
+
+      const guild = guildSnapshot.data() as Guild
+      const members = Array.isArray(guild.members) ? guild.members : []
+      if (members.length >= 5) {
+        throw new Error("ギルドは満員です。")
+      }
+
+      transaction.set(guildRef, { members: arrayUnion(invite.to) }, { merge: true })
+    }
+  })
+}
+
+export function subscribeToGuildMessages(
+  guildId: string,
+  onMessages: (messages: GuildMessage[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    query(getGuildMessagesCollectionRef(guildId), orderBy("timestamp", "asc"), limit(100)),
+    (snapshot) => {
+      onMessages(
+        snapshot.docs.map((docSnapshot) => ({
+          id: docSnapshot.id,
+          ...(docSnapshot.data() as Omit<GuildMessage, "id">),
+        })),
+      )
+    },
+    onError,
+  )
+}
+
+export async function sendGuildMessage(guildId: string, senderId: string, senderName: string, text: string) {
+  const trimmedText = text.trim()
+  if (!trimmedText) {
+    throw new Error("メッセージを入力してください。")
+  }
+
+  await addDoc(getGuildMessagesCollectionRef(guildId), {
+    text: trimmedText,
+    senderId,
+    senderName,
+    timestamp: serverTimestamp(),
+  })
 }
 
 export async function getMonthlyRanking(friendOnlyForUid?: string) {
