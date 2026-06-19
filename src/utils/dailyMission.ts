@@ -4,6 +4,7 @@ import { db } from "@/firebase"
 import type { TrainingEntry } from "@/sections/TrainingPage"
 import type { WeeklyProgressState } from "@/utils/weeklyProgress"
 import type { MonthlyCharacterProgressState } from "@/utils/monthlyCharacterProgress"
+import { getBeginnerWeightLabel, getExerciseGuideEntry, normalizeExerciseName, type ProfileGender } from "@/utils/exerciseDatabase"
 
 export const DAILY_MISSION_STORAGE_KEY = "gym-quest-daily-missions"
 export const DAILY_MISSION_HISTORY_STORAGE_KEY = "gym-quest-daily-mission-history"
@@ -106,10 +107,6 @@ export function toDateKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 }
 
-function normalizeExerciseName(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, "")
-}
-
 function getEntryDateKey(entry: TrainingEntry) {
   if (entry.dateKey) return entry.dateKey
   const today = new Date()
@@ -195,23 +192,26 @@ function getSelectedExercises(settings: DailyMissionSettings, bodyPart: MissionB
   return selected.length > 0 ? selected : options
 }
 
-function getRecommendedWeight(entries: TrainingEntry[], exerciseName: string) {
+function getRecommendedWeight(entries: TrainingEntry[], exerciseName: string, gender: ProfileGender = "male") {
   const normalized = normalizeExerciseName(exerciseName)
   const matchedEntries = entries.filter((entry) => normalizeExerciseName(entry.exerciseName) === normalized)
   if (matchedEntries.length === 0) {
-    return "自分が10回ギリギリできる重さ"
+    return getBeginnerWeightLabel(exerciseName, gender) ?? "自分が10回ギリギリできる重さ"
   }
   const latestEntry = matchedEntries[matchedEntries.length - 1]
   const weights = latestEntry.sets.map((set) => normalizeNumber(set.weight, 0)).filter((weight) => weight > 0)
   if (weights.length === 0) {
-    return "自分が10回ギリギリできる重さ"
+    return getBeginnerWeightLabel(exerciseName, gender) ?? "自分が10回ギリギリできる重さ"
   }
   const averageWeight = weights.reduce((sum, weight) => sum + weight, 0) / weights.length
   const roundedWeight = averageWeight % 1 === 0 ? averageWeight.toFixed(0) : averageWeight.toFixed(1)
-  return `${roundedWeight}kg目安`
+  const exercise = getExerciseGuideEntry(exerciseName)
+  const step = exercise?.equipment === "バーベル" ? 2.5 : 2
+  const challengeWeight = (Math.round((averageWeight + step) * 10) / 10).toFixed(Number.isInteger(averageWeight + step) ? 0 : 1)
+  return `前回 ${roundedWeight}kg / ${challengeWeight}kgに挑戦！`
 }
 
-function createMission(dateKey: string, bodyPart: MissionBodyPart, exercise: MissionExerciseOption, entries: TrainingEntry[], source: "preset" | "custom"): DailyMission {
+function createMission(dateKey: string, bodyPart: MissionBodyPart, exercise: MissionExerciseOption, entries: TrainingEntry[], source: "preset" | "custom", gender: ProfileGender): DailyMission {
   return {
     id: `${dateKey}-${bodyPart}-${normalizeExerciseName(exercise.name)}`,
     dateKey,
@@ -219,7 +219,7 @@ function createMission(dateKey: string, bodyPart: MissionBodyPart, exercise: Mis
     exerciseName: exercise.name,
     trainingBodyPart: exercise.trainingBodyPart,
     targetSets: 3,
-    recommendedWeight: getRecommendedWeight(entries, exercise.name),
+    recommendedWeight: getRecommendedWeight(entries, exercise.name, gender),
     completed: false,
     completedAt: null,
     source,
@@ -286,6 +286,7 @@ export function generateDailyMissionDay(
   entries: TrainingEntry[],
   weeklyProgress: WeeklyProgressState,
   settings: DailyMissionSettings,
+  gender: ProfileGender = "male",
   referenceDate = new Date(),
 ): DailyMissionDay {
   const dateKey = toDateKey(referenceDate)
@@ -313,6 +314,7 @@ export function generateDailyMissionDay(
       exercise,
       entries,
       PRESET_EXERCISES[rotationBodyPart].some((preset) => preset.name === exercise.name) ? "preset" : "custom",
+      gender,
     ),
   )
 
@@ -331,6 +333,7 @@ export function resolveDailyMissionState(
   entries: TrainingEntry[],
   weeklyProgress: WeeklyProgressState,
   settings: DailyMissionSettings,
+  gender: ProfileGender = "male",
   referenceDate = new Date(),
 ) {
   const todayKey = toDateKey(referenceDate)
@@ -353,7 +356,7 @@ export function resolveDailyMissionState(
   }
 
   return {
-    currentDay: generateDailyMissionDay(entries, weeklyProgress, settings, referenceDate),
+    currentDay: generateDailyMissionDay(entries, weeklyProgress, settings, gender, referenceDate),
     history: trimHistory([previousHistoryEntry, ...history.filter((entry) => entry.dateKey !== currentDay.dateKey)]),
   }
 }

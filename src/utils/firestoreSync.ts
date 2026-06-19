@@ -30,6 +30,7 @@ export interface UserProfile {
   level: number
   xp: number
   trainingDays: number
+  gender?: "male" | "female" | "unspecified"
   lastTrainingAt?: string | null
   gorillaEmotion?: string
   gorillaEmotionUpdatedAt?: string
@@ -289,6 +290,7 @@ export function buildUserProfile(user: User, xp: number, level: number, training
     level,
     xp,
     trainingDays: getTrainingDays(trainingEntries),
+    gender: "unspecified",
   }
 }
 
@@ -309,6 +311,7 @@ export async function mergeLocalDataToFirestore(user: User, payload: SyncPayload
     level: Math.max(payload.profile.level, remoteProfile?.level ?? 0),
     xp: Math.max(payload.profile.xp, remoteProfile?.xp ?? 0),
     trainingDays: Math.max(payload.profile.trainingDays, remoteProfile?.trainingDays ?? 0, getTrainingDays(mergedEntries)),
+    gender: payload.profile.gender ?? remoteProfile?.gender ?? "unspecified",
     lastTrainingAt: payload.profile.lastTrainingAt ?? remoteProfile?.lastTrainingAt ?? null,
     gorillaEmotion: payload.profile.gorillaEmotion ?? remoteProfile?.gorillaEmotion,
     gorillaEmotionUpdatedAt: payload.profile.gorillaEmotionUpdatedAt ?? remoteProfile?.gorillaEmotionUpdatedAt,
@@ -370,6 +373,7 @@ export function subscribeToUserTrainingData(
           level: data?.level ?? 1,
           xp: data?.xp ?? 0,
           trainingDays: data?.trainingDays ?? 0,
+          gender: data?.gender ?? "unspecified",
           monthlyXP: data?.monthlyXP ?? 0,
           monthlyLevel: data?.monthlyLevel ?? 1,
           monthResetDate: data?.monthResetDate,

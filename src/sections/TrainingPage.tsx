@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { IconArrowDown, IconArrowUp, IconBook, IconChart, IconEqual, IconGorillaFace, IconPlus, IconStar } from "@/icons"
 import EmptyState from "@/components/EmptyState"
 import { exerciseOptions, getExerciseWeightStep, type Routine } from "@/sections/routineData"
+import { getExerciseHint } from "@/utils/exerciseDatabase"
 
 type TrainingBodyPart = "CHEST" | "BACK" | "SHOULDERS" | "BICEPS" | "TRICEPS" | "LEGS"
 type BodyPartFilter = "ALL" | TrainingBodyPart
@@ -437,6 +438,7 @@ export default function TrainingPage({
   const [prBanner, setPrBanner] = useState<{ exerciseName: string; weight: number } | null>(null)
   const [completionSuggestions, setCompletionSuggestions] = useState<SuggestionSummary[]>([])
   const [celebration, setCelebration] = useState<{ message: string; particles: CelebrationParticle[] } | null>(null)
+  const currentExerciseHint = getExerciseHint(exerciseName)
   const exerciseOneRMHistory = useMemo(() => calculateExerciseOneRMHistory(entries), [entries])
   const selectedDateLabel = useMemo(() => {
     if (!selectedDateKey) {
@@ -1327,6 +1329,11 @@ export default function TrainingPage({
                       placeholder={t("workout.exerciseNamePlaceholder")}
                       className={inputClassName}
                     />
+                    {currentExerciseHint ? (
+                      <div className="mt-3 rounded-2xl border border-[#F5A623]/25 bg-[#FFF8E7] px-3 py-2 text-xs font-medium text-[#8A5A00] dark:border-[#D4A900]/20 dark:bg-[#171717] dark:text-[#FFE082]">
+                        💡 ヒント: {currentExerciseHint}
+                      </div>
+                    ) : null}
                     {filteredGroupedExerciseOptions.length > 0 ? (
                       <div className="mt-3 max-h-72 space-y-3 overflow-y-auto rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 dark:border-[#D4A900]/20 dark:bg-[#111111]">
                         {filteredGroupedExerciseOptions.map((group) => (

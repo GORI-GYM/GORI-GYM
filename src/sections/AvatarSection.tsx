@@ -14,9 +14,10 @@ interface AvatarSectionProps {
   skippedDays: number
   weight: number
   height: number
+  gender?: "male" | "female" | "unspecified"
   xp: number
   nextLevelXp: number
-  onSaveProfile: (profile: { weight: number; height: number }) => void
+  onSaveProfile: React.Dispatch<React.SetStateAction<{ weight: number; height: number; gender: "male" | "female" | "unspecified" }>>
 }
 
 export default function AvatarSection({
@@ -28,6 +29,7 @@ export default function AvatarSection({
   skippedDays,
   weight,
   height,
+  gender,
   xp,
   nextLevelXp,
   onSaveProfile,
@@ -76,6 +78,7 @@ export default function AvatarSection({
     onSaveProfile({
       weight: Math.max(0, Math.round(nextWeight)),
       height: Math.max(0, Math.round(nextHeight)),
+      gender: gender ?? "unspecified",
     })
     setIsEditOpen(false)
   }

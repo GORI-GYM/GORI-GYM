@@ -15,6 +15,7 @@ import TrainingPage from "@/sections/TrainingPage"
 import WorkoutPage from "@/sections/WorkoutPage"
 import AchievementsPage from "@/sections/AchievementsPage"
 import RoutinePage from "@/sections/RoutinePage"
+import ExerciseGuidePage from "@/sections/ExerciseGuidePage"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
@@ -97,24 +98,28 @@ function getStoredTheme(): ThemeMode {
 
 function getStoredProfile() {
   if (typeof window === "undefined") {
-    return { weight: 70, height: 175 }
+    return { weight: 70, height: 175, gender: "unspecified" as const }
   }
 
   const storedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
   if (!storedProfile) {
-    return { weight: 70, height: 175 }
+    return { weight: 70, height: 175, gender: "unspecified" as const }
   }
 
   try {
     const parsedProfile = JSON.parse(storedProfile)
     if (typeof parsedProfile?.weight === "number" && typeof parsedProfile?.height === "number") {
-      return parsedProfile as { weight: number; height: number }
+      return {
+        weight: parsedProfile.weight,
+        height: parsedProfile.height,
+        gender: parsedProfile.gender === "male" || parsedProfile.gender === "female" || parsedProfile.gender === "unspecified" ? parsedProfile.gender : "unspecified",
+      }
     }
   } catch {
-    return { weight: 70, height: 175 }
+    return { weight: 70, height: 175, gender: "unspecified" as const }
   }
 
-  return { weight: 70, height: 175 }
+  return { weight: 70, height: 175, gender: "unspecified" as const }
 }
 
 function getStoredTrainingEntries() {
@@ -147,6 +152,7 @@ function createLocalUserProfile(displayName: string | null | undefined, xp: numb
     level,
     xp,
     trainingDays: getTrainingDaysCount(trainingEntries),
+    gender: "unspecified",
   }
 }
 
@@ -172,7 +178,7 @@ const PLAYER = {
   motivationMessage: "Every rep is a step toward greatness.",
 }
 
-type NavTab = "home" | "routine" | "training" | "character" | "social" | "ranking" | "achievements" | "auth"
+type NavTab = "home" | "routine" | "training" | "character" | "social" | "ranking" | "achievements" | "auth" | "guide"
 
 interface HomeTrainingSummary {
   date: string
@@ -328,7 +334,7 @@ function AppContent() {
   const [big3OneRMRecords, setBig3OneRMRecords] = useState<Big3OneRMRecords>(initialBig3OneRMRecords)
   const [xp, setXp] = useState(initialXP)
   const [bodyPartXP, setBodyPartXP] = useState<BodyPartXPMap>(initialBodyPartXP)
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => createLocalUserProfile(user?.displayName, initialXP, getLevelFromXP(initialXP), getStoredTrainingEntries()))
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => ({ ...createLocalUserProfile(user?.displayName, initialXP, getLevelFromXP(initialXP), getStoredTrainingEntries()), gender: getStoredProfile().gender }))
   const [routines, setRoutines] = useState<Routine[]>(getStoredRoutines)
   const [pendingStartRoutine, setPendingStartRoutine] = useState<Routine | null>(null)
   const [selectedTrainingDateKey, setSelectedTrainingDateKey] = useState<string | null>(null)
@@ -359,8 +365,8 @@ function AppContent() {
   const resolvedWeeklyProgress = useMemo(() => resolveWeeklyProgress(trainingEntries, weeklyProgress), [trainingEntries, weeklyProgress])
   const weeklyProgressSummary = useMemo(() => calculateWeeklyProgressSummary(trainingEntries, resolvedWeeklyProgress), [resolvedWeeklyProgress, trainingEntries])
   const resolvedDailyMissionState = useMemo(
-    () => resolveDailyMissionState(dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings),
-    [dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings],
+    () => resolveDailyMissionState(dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings, profile.gender === "female" ? "female" : "male"),
+    [dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings, profile.gender],
   )
   const previousLevelRef = useRef(level)
   const isApplyingRemoteSnapshotRef = useRef(false)
@@ -487,8 +493,8 @@ function AppContent() {
     if (resolvedDailyMissionState.currentDay.missions.length > 0 || resolvedDailyMissionState.currentDay.isRestDay) {
       return
     }
-    setDailyMissionDay(generateDailyMissionDay(trainingEntries, resolvedWeeklyProgress, dailyMissionSettings))
-  }, [resolvedDailyMissionState.currentDay, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings])
+    setDailyMissionDay(generateDailyMissionDay(trainingEntries, resolvedWeeklyProgress, dailyMissionSettings, profile.gender === "female" ? "female" : "male"))
+  }, [resolvedDailyMissionState.currentDay, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings, profile.gender])
 
   useEffect(() => {
     setBig3Records(calculateBig3Records(trainingEntries))
@@ -504,6 +510,7 @@ function AppContent() {
         level,
         xp,
         trainingDays: getTrainingDaysCount(trainingEntries),
+        gender: current.gender ?? profile.gender,
       }))
       return
     }
@@ -514,8 +521,9 @@ function AppContent() {
       level,
       xp,
       trainingDays: getTrainingDaysCount(trainingEntries),
+      gender: current.gender ?? profile.gender,
     }))
-  }, [level, trainingEntries, user, xp])
+  }, [level, trainingEntries, user, xp, profile.gender])
 
   useEffect(() => {
     if (!user) {
@@ -546,6 +554,7 @@ function AppContent() {
         trainingEntries,
         profile: {
           ...userProfile,
+          gender: profile.gender,
           ...weeklyProgress,
           ...monthlyCharacterProgress,
         },
@@ -586,6 +595,7 @@ function AppContent() {
         lastSyncedTrainingEntriesRef.current = JSON.stringify(payload.trainingEntries)
         lastSyncedProfileRef.current = JSON.stringify(payload.profile)
         setUserProfile((current) => ({ ...current, ...payload.profile }))
+        setProfile((current) => ({ ...current, gender: payload.profile.gender ?? current.gender }))
         setWeeklyProgress((current) => ({
           ...current,
           weeklyGoal: payload.profile.weeklyGoal ?? current.weeklyGoal,
@@ -604,7 +614,7 @@ function AppContent() {
       isMounted = false
       unsubscribe()
     }
-  }, [trainingEntries, user, userProfile])
+  }, [trainingEntries, user, userProfile, weeklyProgress, monthlyCharacterProgress, profile.gender])
 
   useEffect(() => {
     if (!user || isApplyingRemoteSnapshotRef.current) {
@@ -631,6 +641,7 @@ function AppContent() {
       level,
       xp,
       trainingDays: getTrainingDaysCount(trainingEntries),
+      gender: profile.gender,
       weeklyGoal: resolvedWeeklyProgress.weeklyGoal,
       currentStreak: resolvedWeeklyProgress.currentStreak,
       weeklyXP: resolvedWeeklyProgress.weeklyXP,
@@ -655,7 +666,7 @@ function AppContent() {
       history: resolvedDailyMissionState.history,
       settings: dailyMissionSettings,
     })
-  }, [dailyMissionSettings, level, resolvedDailyMissionState, resolvedMonthlyCharacterProgress, resolvedWeeklyProgress, trainingEntries, user, userProfile, xp])
+  }, [dailyMissionSettings, level, resolvedDailyMissionState, resolvedMonthlyCharacterProgress, resolvedWeeklyProgress, trainingEntries, user, userProfile, xp, profile.gender])
 
   const handleTrainingSaved = (targetDateKey: string) => {
     const result = applyTrainingCompletion(trainingEntries, resolvedWeeklyProgress, targetDateKey)
@@ -709,7 +720,7 @@ function AppContent() {
 
   const handleSaveDailyMissionSettings = (settings: DailyMissionSettings) => {
     setDailyMissionSettings(settings)
-    setDailyMissionDay(generateDailyMissionDay(trainingEntries, resolvedWeeklyProgress, settings))
+    setDailyMissionDay(generateDailyMissionDay(trainingEntries, resolvedWeeklyProgress, settings, profile.gender === "female" ? "female" : "male"))
   }
 
   const handleBackupImportComplete = () => {
@@ -793,6 +804,10 @@ function AppContent() {
       )
     }
 
+    if (activeTab === "guide") {
+      return <ExerciseGuidePage onBackHome={() => setActiveTab("home")} />
+    }
+
     if (activeTab === "achievements") {
       return <AchievementsPage trainingEntries={trainingEntries} big3Records={big3Records} />
     }
@@ -819,6 +834,7 @@ function AppContent() {
           skippedDays={gorillaEmotionState.skippedDays}
           weight={profile.weight}
           height={profile.height}
+          gender={profile.gender}
           xp={xp}
           nextLevelXp={nextLevelXp}
           onSaveProfile={setProfile}
@@ -841,6 +857,70 @@ function AppContent() {
             setActiveTab("training")
           }}
         />
+        <div className="px-5">
+          <button
+            type="button"
+            onClick={() => setActiveTab("guide")}
+            className="flex w-full items-center justify-between rounded-[1.75rem] border border-[#F5A623]/30 bg-[linear-gradient(135deg,#0a0a0a,#1f1f1f)] px-5 py-4 text-left text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
+          >
+            <div>
+              <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#FFD27A]">New in Ver4</div>
+              <div className="mt-1 text-lg font-black">初心者ガイド📖</div>
+              <div className="mt-1 text-sm text-[#FDE7B0]">種目のやり方・重量目安・フォームのコツをすぐ確認</div>
+            </div>
+            <span className="rounded-full bg-[#F5A623] px-3 py-2 text-sm font-black text-[#0a0a0a]">見る</span>
+          </button>
+        </div>
+        <div className="px-5 pt-5">
+          <div className="rounded-[1.75rem] bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:bg-[#171717]">
+            <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#B77900]">Profile</div>
+            <h3 className="mt-1 text-lg font-black text-[#0a0a0a] dark:text-white">プロフィール設定</h3>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold text-[#2A2A2A] dark:text-[#F5F5F5]">体重(kg)</span>
+                <input
+                  type="number"
+                  value={profile.weight}
+                  onChange={(event) => setProfile((current) => ({ ...current, weight: Number(event.target.value) || 0 }))}
+                  className="w-full rounded-2xl border border-[#F5A623]/30 bg-white px-4 py-3 text-sm text-[#0a0a0a] outline-none focus:border-[#F5A623] dark:bg-[#111111] dark:text-white"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold text-[#2A2A2A] dark:text-[#F5F5F5]">身長(cm)</span>
+                <input
+                  type="number"
+                  value={profile.height}
+                  onChange={(event) => setProfile((current) => ({ ...current, height: Number(event.target.value) || 0 }))}
+                  className="w-full rounded-2xl border border-[#F5A623]/30 bg-white px-4 py-3 text-sm text-[#0a0a0a] outline-none focus:border-[#F5A623] dark:bg-[#111111] dark:text-white"
+                />
+              </label>
+            </div>
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-semibold text-[#2A2A2A] dark:text-[#F5F5F5]">性別</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: "male", label: "男性" },
+                  { key: "female", label: "女性" },
+                  { key: "unspecified", label: "未設定" },
+                ].map((option) => {
+                  const active = profile.gender === option.key
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => setProfile((current) => ({ ...current, gender: option.key as "male" | "female" | "unspecified" }))}
+                      className={`rounded-2xl px-3 py-3 text-sm font-bold transition ${
+                        active ? "bg-[#F5A623] text-[#0a0a0a]" : "border border-[#F5A623]/30 bg-white text-[#8A5A00] dark:bg-[#111111] dark:text-[#FFE082]"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
         <StatusPanel
           stats={PLAYER.stats}
           big3Records={big3Records}
