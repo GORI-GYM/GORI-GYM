@@ -18,7 +18,7 @@ import RoutinePage from "@/sections/RoutinePage"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
-import { mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToPendingFriendRequestCount, subscribeToUserTrainingData, type UserProfile } from "@/utils/firestoreSync"
+import { mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToPendingFriendRequestCount, subscribeToPendingGorillaBattleCount, subscribeToUserTrainingData, type UserProfile } from "@/utils/firestoreSync"
 import { initialRoutines, type Routine } from "@/sections/routineData"
 import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMRecords, calculateBig3Records, calculateBig3OneRMRecords, type BodyPartXPMap, calculateBodyPartXPMap, calculateTotalXP, getLevelFromXP, LEVEL_THRESHOLDS, MAX_LEVEL, XP_PER_LEVEL } from "@/sections/TrainingPage"
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
@@ -335,6 +335,7 @@ function AppContent() {
   const [selectedCharacter] = useState<CharacterId>("gorilla")
   const [levelUpOverlayLevel, setLevelUpOverlayLevel] = useState<number | null>(null)
   const [pendingFriendRequestCount, setPendingFriendRequestCount] = useState(0)
+  const [pendingBattleCount, setPendingBattleCount] = useState(0)
   const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgressState>(getStoredWeeklyProgressState)
   const [monthlyCharacterProgress, setMonthlyCharacterProgress] = useState<MonthlyCharacterProgressState>(getStoredMonthlyCharacterProgressState)
   const [dailyMissionSettings, setDailyMissionSettings] = useState<DailyMissionSettings>(getStoredDailyMissionSettings)
@@ -469,10 +470,17 @@ function AppContent() {
   useEffect(() => {
     if (!user) {
       setPendingFriendRequestCount(0)
+      setPendingBattleCount(0)
       return
     }
 
-    return subscribeToPendingFriendRequestCount(user.uid, setPendingFriendRequestCount)
+    const unsubscribeFriend = subscribeToPendingFriendRequestCount(user.uid, setPendingFriendRequestCount)
+    const unsubscribeBattle = subscribeToPendingGorillaBattleCount(user.uid, setPendingBattleCount)
+
+    return () => {
+      unsubscribeFriend()
+      unsubscribeBattle()
+    }
   }, [user])
 
   useEffect(() => {
@@ -759,7 +767,7 @@ function AppContent() {
         <SocialHubPage
           profile={userProfile}
           onProfileChange={setUserProfile}
-          socialBadgeCount={pendingFriendRequestCount}
+          socialBadgeCount={pendingFriendRequestCount + pendingBattleCount}
         />
       )
     }
@@ -897,7 +905,7 @@ function AppContent() {
           {renderMainContent()}
         </main>
 
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} socialBadgeCount={pendingFriendRequestCount} />
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} socialBadgeCount={pendingFriendRequestCount + pendingBattleCount} />
 
         <AnimatePresence>
           {gorillaCelebration ? (

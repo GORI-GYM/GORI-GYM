@@ -3,9 +3,10 @@ import { motion } from "framer-motion"
 import ProfilePage from "@/sections/ProfilePage"
 import SocialPage from "@/sections/SocialPage"
 import GuildPage from "@/sections/GuildPage"
+import GorillaBattleSection from "@/sections/GorillaBattleSection"
 import type { UserProfile } from "@/utils/firestoreSync"
 
-type SocialSection = "friends" | "guild"
+type SocialSection = "friends" | "guild" | "battle"
 type FriendSection = "profile" | "social"
 
 interface SocialHubPageProps {
@@ -28,9 +29,9 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">SOCIAL</div>
-            <h1 className="mt-2 text-2xl font-black text-white">フレンド & ギルド</h1>
+            <h1 className="mt-2 text-2xl font-black text-white">フレンド・ギルド・対決</h1>
             <p className="mt-2 text-sm leading-6 text-white/70">
-              フレンド追加、プロフィール編集、ギルド機能をこのタブでまとめて管理できます。
+              フレンド交流、ギルド連携、そしてゴリラ対決まで、このタブでまとめて管理できます。
             </p>
           </div>
           {socialBadgeCount > 0 ? (
@@ -52,6 +53,12 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
             active={activeSection === "guild"}
             label="ギルド"
             onClick={() => setActiveSection("guild")}
+          />
+          <SectionButton
+            active={activeSection === "battle"}
+            label="対決"
+            badge={socialBadgeCount}
+            onClick={() => setActiveSection("battle")}
           />
         </div>
 
@@ -76,6 +83,8 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
       <div className="mt-5">
         {activeSection === "guild" ? (
           <GuildPage profile={profile} />
+        ) : activeSection === "battle" ? (
+          <GorillaBattleSection profile={profile} />
         ) : activeFriendSection === "profile" ? (
           <ProfilePage profile={profile} onProfileChange={onProfileChange} />
         ) : (

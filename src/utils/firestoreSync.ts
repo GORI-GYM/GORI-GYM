@@ -23,6 +23,7 @@ import type { User } from "firebase/auth"
 import { db } from "@/firebase"
 import type { TrainingEntry } from "@/sections/TrainingPage"
 import type { DailyMissionDay, DailyMissionHistoryEntry, DailyMissionSettings } from "@/utils/dailyMission"
+import { calculateGuildWarWinner, getWeekRange, isDateWithinRange, type GuildWarStatus } from "@/utils/guildWar"
 
 export interface UserProfile {
   displayName: string
@@ -107,6 +108,29 @@ export interface GuildDetails extends Guild {
   monthlyTrainingDays: number
 }
 
+export interface GuildWarMemberContribution extends PublicUserProfile {
+  weeklyXP: number
+}
+
+export interface GuildWarRecord {
+  id: string
+  guild1Id: string
+  guild2Id: string
+  guild1TotalXP: number
+  guild2TotalXP: number
+  weekStart: string
+  weekEnd: string
+  status: GuildWarStatus
+  winnerId?: string | null
+  requestedBy: string
+  createdAt?: unknown
+  completedAt?: unknown
+  guild1Name?: string
+  guild2Name?: string
+  guild1Members?: GuildWarMemberContribution[]
+  guild2Members?: GuildWarMemberContribution[]
+}
+
 export interface FriendRequest {
   id: string
   from: string
@@ -141,6 +165,29 @@ export interface TrainingLike {
   timestamp?: unknown
 }
 
+export interface GorillaBattleStats {
+  punch: number
+  speed: number
+  defense: number
+  stamina: number
+  spirit: number
+  total: number
+}
+
+export interface GorillaBattleRecord {
+  id: string
+  challenger: string
+  opponent: string
+  challengerStats: GorillaBattleStats
+  opponentStats: GorillaBattleStats
+  status: "pending" | "accepted" | "rejected" | "completed"
+  result?: "challenger" | "opponent" | "draw"
+  createdAt?: unknown
+  completedAt?: unknown
+  challengerProfile?: PublicUserProfile
+  opponentProfile?: PublicUserProfile
+}
+
 export interface SyncPayload {
   trainingEntries: TrainingEntry[]
   profile: UserProfile
@@ -168,6 +215,14 @@ function getGuildInvitesCollectionRef() {
 
 function getGuildMessagesCollectionRef(guildId: string) {
   return collection(db, "guilds", guildId, "messages")
+}
+
+function getGuildWarsCollectionRef() {
+  return collection(db, "guildWars")
+}
+
+function getGorillaBattlesCollectionRef() {
+  return collection(db, "gorillaBattles")
 }
 
 function getTrainingEntryIdentity(entry: TrainingEntry) {
@@ -532,6 +587,20 @@ export function subscribeToPendingFriendRequestCount(uid: string, onCount: (coun
   )
 }
 
+export function subscribeToPendingGorillaBattleCount(uid: string, onCount: (count: number) => void, onError?: (error: FirestoreError) => void) {
+  return onSnapshot(
+    query(getGorillaBattlesCollectionRef(), orderBy("createdAt", "desc"), limit(100)),
+    (snapshot) => {
+      const count = snapshot.docs.reduce((total, docSnapshot) => {
+        const data = docSnapshot.data() as Omit<GorillaBattleRecord, "id">
+        return data.opponent === uid && data.status === "pending" ? total + 1 : total
+      }, 0)
+      onCount(count)
+    },
+    onError,
+  )
+}
+
 export async function getIncomingFriendRequests(uid: string) {
   const snapshot = await getDocs(query(getFriendRequestsCollectionRef(), orderBy("timestamp", "desc"), limit(100)))
   const requests = await Promise.all(
@@ -576,6 +645,106 @@ export async function getFriends(uid: string) {
   const friendIds = Array.isArray(userSnapshot.data()?.friends) ? userSnapshot.data()?.friends as string[] : []
   const profiles = await Promise.all(friendIds.map((friendUid) => getPublicUserProfile(friendUid)))
   return profiles.filter(Boolean) as PublicUserProfile[]
+}
+
+export async function createGorillaBattle(
+  challengerUid: string,
+  opponentUid: string,
+  challengerStats: GorillaBattleStats,
+  opponentStats: GorillaBattleStats,
+) {
+  if (challengerUid === opponentUid) {
+    throw new Error("自分自身には対決を申し込めません。")
+  }
+
+  const snapshot = await getDocs(query(getGorillaBattlesCollectionRef(), orderBy("createdAt", "desc"), limit(200)))
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const duplicate = snapshot.docs.find((docSnapshot) => {
+    const data = docSnapshot.data() as Omit<GorillaBattleRecord, "id">
+    const createdAt = data.createdAt && typeof (data.createdAt as { toDate?: () => Date }).toDate === "function"
+      ? (data.createdAt as { toDate: () => Date }).toDate().toISOString().slice(0, 10)
+      : null
+
+    return (
+      createdAt === todayKey
+      && ((data.challenger === challengerUid && data.opponent === opponentUid) || (data.challenger === opponentUid && data.opponent === challengerUid))
+      && data.status !== "rejected"
+    )
+  })
+
+  if (duplicate) {
+    throw new Error("同じ相手への対決申し込みは1日1回までです。")
+  }
+
+  const battleRef = await addDoc(getGorillaBattlesCollectionRef(), {
+    challenger: challengerUid,
+    opponent: opponentUid,
+    challengerStats,
+    opponentStats,
+    status: "pending",
+    createdAt: serverTimestamp(),
+  })
+
+  return battleRef.id
+}
+
+export async function getIncomingGorillaBattles(uid: string) {
+  const snapshot = await getDocs(query(getGorillaBattlesCollectionRef(), orderBy("createdAt", "desc"), limit(100)))
+  const battles = await Promise.all(
+    snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<GorillaBattleRecord, "id">) }))
+      .filter((battle) => battle.opponent === uid && battle.status === "pending")
+      .map(async (battle) => ({
+        ...battle,
+        challengerProfile: await getPublicUserProfile(battle.challenger),
+        opponentProfile: await getPublicUserProfile(battle.opponent),
+      })),
+  )
+
+  return battles.filter((battle) => battle.challengerProfile && battle.opponentProfile) as GorillaBattleRecord[]
+}
+
+export async function respondToGorillaBattle(battleId: string, action: "accepted" | "rejected") {
+  const battleRef = doc(db, "gorillaBattles", battleId)
+
+  await runTransaction(db, async (transaction) => {
+    const battleSnapshot = await transaction.get(battleRef)
+
+    if (!battleSnapshot.exists()) {
+      throw new Error("対決リクエストが見つかりません。")
+    }
+
+    const battle = battleSnapshot.data() as Omit<GorillaBattleRecord, "id">
+    if (battle.status !== "pending") {
+      throw new Error("この対決リクエストはすでに処理済みです。")
+    }
+
+    transaction.set(battleRef, { status: action }, { merge: true })
+  })
+}
+
+export async function completeGorillaBattle(battleId: string, result: "challenger" | "opponent" | "draw") {
+  await setDoc(doc(db, "gorillaBattles", battleId), {
+    status: "completed",
+    result,
+    completedAt: serverTimestamp(),
+  }, { merge: true })
+}
+
+export async function getGorillaBattleHistory(uid: string) {
+  const snapshot = await getDocs(query(getGorillaBattlesCollectionRef(), orderBy("createdAt", "desc"), limit(100)))
+  const battles = await Promise.all(
+    snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<GorillaBattleRecord, "id">) }))
+      .filter((battle) => battle.challenger === uid || battle.opponent === uid)
+      .map(async (battle) => ({
+        ...battle,
+        challengerProfile: await getPublicUserProfile(battle.challenger),
+        opponentProfile: await getPublicUserProfile(battle.opponent),
+      })),
+  )
+
+  return battles.filter((battle) => battle.challengerProfile && battle.opponentProfile) as GorillaBattleRecord[]
 }
 
 function getEntryDateKey(entry: TrainingEntry) {
@@ -624,6 +793,68 @@ async function getUserGuild(uid: string) {
     .find((entry) => Array.isArray(entry.members) && entry.members.includes(uid))
 
   return guild ?? null
+}
+
+async function getGuildById(guildId: string) {
+  const snapshot = await getDoc(doc(db, "guilds", guildId))
+  if (!snapshot.exists()) {
+    return null
+  }
+
+  return { id: snapshot.id, ...(snapshot.data() as Omit<Guild, "id">) } satisfies Guild
+}
+
+function getTrainingEntryXP(entry: TrainingEntry) {
+  return entry.sets.reduce((total, set) => total + Math.round(set.weight * (set.reps ?? 0) * 0.1), 0)
+}
+
+async function getWeeklyXpSummary(uid: string, weekStart: string, weekEnd: string) {
+  const [profile, trainingSnapshot] = await Promise.all([
+    getPublicUserProfile(uid),
+    getDocs(getTrainingLogsCollectionRef(uid)),
+  ])
+
+  if (!profile) {
+    return null
+  }
+
+  const weeklyEntries = trainingSnapshot.docs
+    .map((snapshot) => snapshot.data() as TrainingEntry)
+    .filter((entry) => {
+      const dateKey = getEntryDateKey(entry)
+      return isDateWithinRange(dateKey, weekStart, weekEnd)
+    })
+
+  return {
+    ...profile,
+    weeklyXP: weeklyEntries.reduce((sum, entry) => sum + getTrainingEntryXP(entry), 0),
+  } satisfies GuildWarMemberContribution
+}
+
+async function buildGuildWarProgress(guildId: string, weekStart: string, weekEnd: string) {
+  const guild = await getGuildById(guildId)
+  if (!guild) {
+    return null
+  }
+
+  const members = (await Promise.all(
+    guild.members.map((memberUid) => getWeeklyXpSummary(memberUid, weekStart, weekEnd)),
+  )).filter(Boolean) as GuildWarMemberContribution[]
+
+  return {
+    guild,
+    totalXP: members.reduce((sum, member) => sum + member.weeklyXP, 0),
+    members: members.sort((left, right) => right.weeklyXP - left.weeklyXP),
+  }
+}
+
+async function getActiveGuildWarForGuild(guildId: string) {
+  const snapshot = await getDocs(query(getGuildWarsCollectionRef(), orderBy("createdAt", "desc"), limit(100)))
+  const war = snapshot.docs
+    .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<GuildWarRecord, "id">) }))
+    .find((entry) => (entry.guild1Id === guildId || entry.guild2Id === guildId) && entry.status !== "completed")
+
+  return war ?? null
 }
 
 async function getMonthlyTrainingSummary(uid: string) {
@@ -721,6 +952,236 @@ export async function getGuildInviteCandidates(uid: string) {
   )
 
   return candidates.filter((candidate) => candidate && !guild.members.includes(candidate.uid)) as PublicUserProfile[]
+}
+
+export async function searchGuildsForWar(uid: string, searchTerm: string) {
+  const guild = await getUserGuild(uid)
+  if (!guild) {
+    throw new Error("ギルドに所属していません。")
+  }
+
+  if (guild.leaderId !== uid) {
+    throw new Error("対抗戦を申し込めるのはリーダーのみです。")
+  }
+
+  const activeWar = await getActiveGuildWarForGuild(guild.id)
+  if (activeWar) {
+    throw new Error("現在進行中の対抗戦があります。")
+  }
+
+  const normalizedTerm = searchTerm.trim().toLowerCase()
+  const snapshot = await getDocs(getGuildsCollectionRef())
+
+  const candidates = await Promise.all(
+    snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<Guild, "id">) }))
+      .filter((entry) => entry.id !== guild.id)
+      .filter((entry) => normalizedTerm.length === 0 || entry.name.toLowerCase().includes(normalizedTerm))
+      .map(async (entry) => {
+        const activeOpponentWar = await getActiveGuildWarForGuild(entry.id)
+        if (activeOpponentWar) {
+          return null
+        }
+
+        const memberProfiles = (await Promise.all(entry.members.map((memberUid) => getPublicUserProfile(memberUid))))
+          .filter(Boolean) as PublicUserProfile[]
+
+        return {
+          ...entry,
+          memberProfiles,
+        }
+      }),
+  )
+
+  return candidates.filter(Boolean) as Array<Guild & { memberProfiles: PublicUserProfile[] }>
+}
+
+export async function createGuildWarRequest(requestedByUid: string, opponentGuildId: string) {
+  const requesterGuild = await getUserGuild(requestedByUid)
+  if (!requesterGuild) {
+    throw new Error("ギルドに所属していません。")
+  }
+
+  if (requesterGuild.leaderId !== requestedByUid) {
+    throw new Error("対抗戦を申し込めるのはリーダーのみです。")
+  }
+
+  const opponentGuild = await getGuildById(opponentGuildId)
+  if (!opponentGuild) {
+    throw new Error("対戦相手のギルドが見つかりません。")
+  }
+
+  const [requesterActiveWar, opponentActiveWar] = await Promise.all([
+    getActiveGuildWarForGuild(requesterGuild.id),
+    getActiveGuildWarForGuild(opponentGuildId),
+  ])
+
+  if (requesterActiveWar || opponentActiveWar) {
+    throw new Error("どちらかのギルドがすでに対抗戦中です。")
+  }
+
+  const { weekStart, weekEnd } = getWeekRange()
+  const warRef = await addDoc(getGuildWarsCollectionRef(), {
+    guild1Id: requesterGuild.id,
+    guild2Id: opponentGuild.id,
+    guild1TotalXP: 0,
+    guild2TotalXP: 0,
+    weekStart,
+    weekEnd,
+    status: "active",
+    winnerId: null,
+    requestedBy: requestedByUid,
+    createdAt: serverTimestamp(),
+  })
+
+  return warRef.id
+}
+
+export async function getGuildWarHistory(guildId: string) {
+  const snapshot = await getDocs(query(getGuildWarsCollectionRef(), orderBy("createdAt", "desc"), limit(100)))
+  const wars = await Promise.all(
+    snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<GuildWarRecord, "id">) }))
+      .filter((entry) => entry.guild1Id === guildId || entry.guild2Id === guildId)
+      .map(async (entry) => {
+        const [guild1, guild2] = await Promise.all([getGuildById(entry.guild1Id), getGuildById(entry.guild2Id)])
+        return {
+          ...entry,
+          guild1Name: guild1?.name ?? "UNKNOWN GUILD",
+          guild2Name: guild2?.name ?? "UNKNOWN GUILD",
+        } satisfies GuildWarRecord
+      }),
+  )
+
+  return wars
+}
+
+export async function getGuildWarDetails(guildId: string) {
+  const activeWar = await getActiveGuildWarForGuild(guildId)
+  if (!activeWar) {
+    return null
+  }
+
+  const [guild1Progress, guild2Progress] = await Promise.all([
+    buildGuildWarProgress(activeWar.guild1Id, activeWar.weekStart, activeWar.weekEnd),
+    buildGuildWarProgress(activeWar.guild2Id, activeWar.weekStart, activeWar.weekEnd),
+  ])
+
+  if (!guild1Progress || !guild2Progress) {
+    return null
+  }
+
+  const nextWinnerId = activeWar.status === "completed"
+    ? activeWar.winnerId ?? null
+    : calculateGuildWarWinner(guild1Progress.guild.id, guild2Progress.guild.id, guild1Progress.totalXP, guild2Progress.totalXP)
+
+  await setDoc(doc(db, "guildWars", activeWar.id), {
+    guild1TotalXP: guild1Progress.totalXP,
+    guild2TotalXP: guild2Progress.totalXP,
+    winnerId: nextWinnerId,
+  }, { merge: true })
+
+  return {
+    ...activeWar,
+    guild1Name: guild1Progress.guild.name,
+    guild2Name: guild2Progress.guild.name,
+    guild1TotalXP: guild1Progress.totalXP,
+    guild2TotalXP: guild2Progress.totalXP,
+    guild1Members: guild1Progress.members,
+    guild2Members: guild2Progress.members,
+    winnerId: nextWinnerId,
+  } satisfies GuildWarRecord
+}
+
+export function subscribeToGuildWar(
+  guildId: string,
+  onWar: (war: GuildWarRecord | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    query(getGuildWarsCollectionRef(), orderBy("createdAt", "desc"), limit(100)),
+    async (snapshot) => {
+      const activeWar = snapshot.docs
+        .map((docSnapshot) => ({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<GuildWarRecord, "id">) }))
+        .find((entry) => (entry.guild1Id === guildId || entry.guild2Id === guildId) && entry.status !== "completed")
+
+      if (!activeWar) {
+        onWar(null)
+        return
+      }
+
+      const details = await getGuildWarDetails(guildId)
+      onWar(details)
+    },
+    onError,
+  )
+}
+
+export async function completeGuildWar(warId: string) {
+  const warRef = doc(db, "guildWars", warId)
+
+  await runTransaction(db, async (transaction) => {
+    const warSnapshot = await transaction.get(warRef)
+    if (!warSnapshot.exists()) {
+      throw new Error("対抗戦が見つかりません。")
+    }
+
+    const war = { id: warSnapshot.id, ...(warSnapshot.data() as Omit<GuildWarRecord, "id">) } satisfies GuildWarRecord
+    if (war.status === "completed") {
+      return
+    }
+
+    const [guild1Progress, guild2Progress, guild1, guild2] = await Promise.all([
+      buildGuildWarProgress(war.guild1Id, war.weekStart, war.weekEnd),
+      buildGuildWarProgress(war.guild2Id, war.weekStart, war.weekEnd),
+      getGuildById(war.guild1Id),
+      getGuildById(war.guild2Id),
+    ])
+
+    if (!guild1Progress || !guild2Progress || !guild1 || !guild2) {
+      throw new Error("対抗戦データの集計に失敗しました。")
+    }
+
+    const winnerId = calculateGuildWarWinner(guild1.id, guild2.id, guild1Progress.totalXP, guild2Progress.totalXP)
+    const winnerBonus = 300
+    const loserBonus = 100
+
+    const applyReward = async (memberUid: string, bonusXp: number) => {
+      const userRef = getUserDocRef(memberUid)
+      const userSnapshot = await transaction.get(userRef)
+      const data = userSnapshot.data() as FirestoreUserProfile | undefined
+      const currentXp = data?.xp ?? 0
+      const currentMonthlyXp = data?.monthlyXP ?? 0
+      const currentBreakdown = data?.breakdown ?? { trainingXP: 0, bonusXP: 0, multiplierApplied: 1 }
+
+      transaction.set(userRef, {
+        xp: currentXp + bonusXp,
+        monthlyXP: currentMonthlyXp + bonusXp,
+        breakdown: {
+          trainingXP: currentBreakdown.trainingXP,
+          bonusXP: currentBreakdown.bonusXP + bonusXp,
+          multiplierApplied: currentBreakdown.multiplierApplied,
+        },
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+    }
+
+    for (const memberUid of guild1.members) {
+      await applyReward(memberUid, winnerId === guild1.id ? winnerBonus : loserBonus)
+    }
+
+    for (const memberUid of guild2.members) {
+      await applyReward(memberUid, winnerId === guild2.id ? winnerBonus : loserBonus)
+    }
+
+    transaction.set(warRef, {
+      guild1TotalXP: guild1Progress.totalXP,
+      guild2TotalXP: guild2Progress.totalXP,
+      status: "completed",
+      winnerId,
+      completedAt: serverTimestamp(),
+    }, { merge: true })
+  })
 }
 
 export async function sendGuildInvite(fromUid: string, toUid: string, guildId: string) {
@@ -964,6 +1425,11 @@ export async function getFriendProfile(friendUid: string) {
     ...profile,
     trainingEntries: trainingSnapshot.docs.map((snapshot) => snapshot.data() as TrainingEntry),
   } satisfies FriendProfile
+}
+
+export async function getUserTrainingEntries(uid: string) {
+  const trainingSnapshot = await getDocs(query(getTrainingLogsCollectionRef(uid), orderBy("id", "desc"), limit(200)))
+  return trainingSnapshot.docs.map((snapshot) => snapshot.data() as TrainingEntry)
 }
 
 export async function toggleTrainingLike(ownerUid: string, trainingEntryId: number, currentUser: Pick<PublicUserProfile, "uid" | "displayName">) {

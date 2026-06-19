@@ -1,0 +1,36 @@
+
+> design-then-build-preview@0.0.0 build
+> tsc -b && vite build
+
+[36mvite v8.0.16 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 509 modules transformed.
+rendering chunks...
+[33m[plugin vite-plugin-pwa:build] Error: This plugin assigns to bundle variable. This is discouraged by Rollup and is not supported by Rolldown. This will be ignored. https://rollupjs.org/plugin-development/#generatebundle:~:text=DANGER,this.emitFile.
+    at Object.set (file:///C:/Users/knuma/Projects/gym-quest/node_modules/rolldown/dist/shared/bindingify-input-options-ClrST5Xx.mjs:519:35)
+    at _generateBundle (file:///C:/Users/knuma/Projects/gym-quest/node_modules/vite-plugin-pwa/dist/index.js:500:38)[39m
+computing gzip size...
+dist/index.html                                      0.99 kB │ gzip:   0.45 kB
+dist/assets/gorilla_lv1-B9osdyQE.png             1,133.04 kB
+dist/assets/gorilla_lv2-DwH-TRvQ.png             1,216.79 kB
+dist/assets/gorilla-xyMfFdwd.png                 1,227.93 kB
+dist/assets/gorilla_lv3-Dx1naTO8.png             1,264.12 kB
+dist/assets/gym-background-BNgLMi0j.png          1,324.50 kB
+dist/assets/gorilla_lv4-V4e33JCJ.png             1,356.50 kB
+dist/assets/gorilla_lv5-BM05WRxY.png             1,496.80 kB
+dist/assets/index-9kWJm1rj.css                      98.82 kB │ gzip:  14.70 kB
+dist/assets/workbox-window.prod.es5-Bd17z0YL.js      5.65 kB │ gzip:   2.20 kB
+dist/assets/index-DmZnf-we.js                    1,312.01 kB │ gzip: 373.69 kB
+
+[32m✓ built in 732ms[39m
+[33m[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+
+PWA v0.20.5
+mode      generateSW
+precache  22 entries (13255.86 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-c3716bd4.js
