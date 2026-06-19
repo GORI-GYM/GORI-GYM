@@ -16,6 +16,7 @@ import WorkoutPage from "@/sections/WorkoutPage"
 import AchievementsPage from "@/sections/AchievementsPage"
 import RoutinePage from "@/sections/RoutinePage"
 import ExerciseGuidePage from "@/sections/ExerciseGuidePage"
+import AITrainerPage from "@/sections/AITrainerPage"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
@@ -50,6 +51,7 @@ import {
   resolveGorillaEmotion,
   type GorillaEmotionState,
 } from "@/utils/gorillaEmotion"
+import { ensureWeeklyAiReport } from "@/utils/aiTrainer"
 
 const THEME_STORAGE_KEY = "gym-quest-theme"
 const ROUTINES_STORAGE_KEY = "gym-quest-routines"
@@ -178,7 +180,7 @@ const PLAYER = {
   motivationMessage: "Every rep is a step toward greatness.",
 }
 
-type NavTab = "home" | "routine" | "training" | "character" | "social" | "ranking" | "achievements" | "auth" | "guide"
+type NavTab = "home" | "routine" | "training" | "character" | "social" | "ranking" | "achievements" | "auth" | "guide" | "ai-trainer"
 
 interface HomeTrainingSummary {
   date: string
@@ -364,6 +366,10 @@ function AppContent() {
   )
   const resolvedWeeklyProgress = useMemo(() => resolveWeeklyProgress(trainingEntries, weeklyProgress), [trainingEntries, weeklyProgress])
   const weeklyProgressSummary = useMemo(() => calculateWeeklyProgressSummary(trainingEntries, resolvedWeeklyProgress), [resolvedWeeklyProgress, trainingEntries])
+  const weeklyAiReport = useMemo(
+    () => ensureWeeklyAiReport(trainingEntries, weeklyProgressSummary, monthlyCharacterProgressSummary),
+    [trainingEntries, weeklyProgressSummary, monthlyCharacterProgressSummary],
+  )
   const resolvedDailyMissionState = useMemo(
     () => resolveDailyMissionState(dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings, profile.gender === "female" ? "female" : "male"),
     [dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings, profile.gender],
@@ -808,6 +814,18 @@ function AppContent() {
       return <ExerciseGuidePage onBackHome={() => setActiveTab("home")} />
     }
 
+    if (activeTab === "ai-trainer") {
+      return (
+        <AITrainerPage
+          entries={trainingEntries}
+          weeklyProgress={weeklyProgressSummary}
+          monthlyCharacterProgress={monthlyCharacterProgressSummary}
+          gorillaEmotion={gorillaEmotionState.emotion}
+          onBackHome={() => setActiveTab("home")}
+        />
+      )
+    }
+
     if (activeTab === "achievements") {
       return <AchievementsPage trainingEntries={trainingEntries} big3Records={big3Records} />
     }
@@ -858,6 +876,32 @@ function AppContent() {
           }}
         />
         <div className="px-5">
+          {weeklyAiReport ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("ai-trainer")}
+              className="mb-4 flex w-full items-center justify-between rounded-[1.75rem] border border-[#F5A623]/30 bg-[linear-gradient(135deg,#1a1a1a,#0a0a0a)] px-5 py-4 text-left text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
+            >
+              <div>
+                <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#FFD27A]">Weekly Report</div>
+                <div className="mt-1 text-lg font-black">先週のレポートが届いてるぞ！</div>
+                <div className="mt-1 text-sm text-[#FDE7B0]">{weeklyAiReport.summary}</div>
+              </div>
+              <span className="rounded-full bg-[#F5A623] px-3 py-2 text-sm font-black text-[#0a0a0a]">確認</span>
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setActiveTab("ai-trainer")}
+            className="mb-4 flex w-full items-center justify-between rounded-[1.75rem] border border-[#F5A623]/30 bg-[linear-gradient(135deg,#0a0a0a,#1f1f1f)] px-5 py-4 text-left text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
+          >
+            <div>
+              <div className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#FFD27A]">GORILLA AI</div>
+              <div className="mt-1 text-lg font-black">AIトレーナー🦍</div>
+              <div className="mt-1 text-sm text-[#FDE7B0]">記録を分析して次の一手を提案するぞ</div>
+            </div>
+            <span className="rounded-full bg-[#F5A623] px-3 py-2 text-sm font-black text-[#0a0a0a]">開く</span>
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab("guide")}
