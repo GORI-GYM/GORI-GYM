@@ -3,13 +3,15 @@ import { motion } from "framer-motion"
 import { useTranslation } from "react-i18next"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import gymBackground from "@/assets/gym-background.png"
+import { getGorillaEmotionLabel, getRandomGorillaLine, type GorillaEmotion } from "@/utils/gorillaEmotion"
 
 interface AvatarSectionProps {
   level: number
   characterName: string
   selectedCharacter: CharacterId
   monthlyCharacterLevel: number
-  todayTrainingStatus: "praise" | "taunt"
+  gorillaEmotion: GorillaEmotion
+  skippedDays: number
   weight: number
   height: number
   xp: number
@@ -17,34 +19,13 @@ interface AvatarSectionProps {
   onSaveProfile: (profile: { weight: number; height: number }) => void
 }
 
-const GORILLA_PRAISE_LINES = [
-  "ナイスワーク！",
-  "今日も追い込んだな！",
-  "その調子だ！",
-  "いい記録だ、胸を張れ！",
-  "積み上げが効いてるぞ！",
-  "ゴリラも拍手だ！",
-] as const
-
-const GORILLA_TAUNT_LINES = [
-  "今日はまだ記録がないぞ？",
-  "サボりか？",
-  "ジム行こうぜ！",
-  "その腕、飾りじゃないだろ？",
-  "今日の1セット、まだ待ってるぞ！",
-  "ゴリラより先に動け！",
-] as const
-
-function getRandomLine(lines: readonly string[]) {
-  return lines[Math.floor(Math.random() * lines.length)]
-}
-
 export default function AvatarSection({
   level,
   characterName: _characterName,
   selectedCharacter,
   monthlyCharacterLevel,
-  todayTrainingStatus,
+  gorillaEmotion,
+  skippedDays,
   weight,
   height,
   xp,
@@ -55,14 +36,28 @@ export default function AvatarSection({
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [draftWeight, setDraftWeight] = useState(String(weight))
   const [draftHeight, setDraftHeight] = useState(String(height))
-  const [gorillaLine, setGorillaLine] = useState(() =>
-    getRandomLine(todayTrainingStatus === "praise" ? GORILLA_PRAISE_LINES : GORILLA_TAUNT_LINES),
-  )
+  const [gorillaLine, setGorillaLine] = useState(() => getRandomGorillaLine(gorillaEmotion))
   const characterImage = useMemo(() => getCharacterGrowthImage(selectedCharacter, monthlyCharacterLevel), [selectedCharacter, monthlyCharacterLevel])
 
   useEffect(() => {
-    setGorillaLine(getRandomLine(todayTrainingStatus === "praise" ? GORILLA_PRAISE_LINES : GORILLA_TAUNT_LINES))
-  }, [todayTrainingStatus])
+    setGorillaLine(getRandomGorillaLine(gorillaEmotion))
+  }, [gorillaEmotion])
+
+  const gorillaVisualClassName = useMemo(() => {
+    switch (gorillaEmotion) {
+      case "HAPPY":
+      case "PROUD":
+        return "scale-[1.06] drop-shadow-[0_0_28px_rgba(245,166,35,0.72)]"
+      case "LONELY":
+        return "scale-95 brightness-75 saturate-75"
+      case "SAD":
+        return "scale-90 grayscale-[0.45] brightness-60 saturate-50"
+      case "ANGRY":
+        return "animate-[gorilla-shake_0.28s_ease-in-out_infinite] scale-[0.98] hue-rotate-[-18deg] saturate-150 brightness-90"
+      default:
+        return ""
+    }
+  }, [gorillaEmotion])
 
   const openEditModal = () => {
     setDraftWeight(String(weight))
@@ -164,17 +159,20 @@ export default function AvatarSection({
               transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" }}
             >
               <div className="text-[0.56rem] font-semibold uppercase tracking-[0.2em] text-[#F5A623]">
-                Gorilla AI
+                Gorilla AI · {getGorillaEmotionLabel(gorillaEmotion)}
               </div>
               <p className="mt-1 text-[0.8rem] font-semibold leading-5 text-[#111111] dark:text-[#F8FAFC]">
                 {gorillaLine}
               </p>
+              <div className="mt-2 text-[0.62rem] font-semibold tracking-[0.08em] text-[#7c5a00] dark:text-[#f5d77a]">
+                {skippedDays === 0 ? "今日は会えてうれしそうだ" : `${skippedDays}日あいてる`}
+              </div>
               <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 rounded-[0.3rem] border-b border-r border-[#F5A623] bg-white md:left-auto md:right-8 md:translate-x-0 dark:border-[#F5A623]/40 dark:bg-[#171717]" />
             </motion.div>
             <img
               src={characterImage}
               alt=""
-              className="relative z-10 max-h-[156px] w-auto object-contain drop-shadow-[0_18px_30px_rgba(245,166,35,0.22)]"
+              className={`relative z-10 max-h-[156px] w-auto object-contain transition-all duration-500 drop-shadow-[0_18px_30px_rgba(245,166,35,0.22)] ${gorillaVisualClassName}`}
             />
           </div>
 

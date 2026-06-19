@@ -210,7 +210,8 @@ export function applyTrainingCompletion(entries: TrainingEntry[], currentState: 
   const completedDateKeys = getWeeklyCompletedDateKeys(entries, resolvedState.weekStartDate)
   const isCurrentWeekTraining = completedDateKeys.includes(targetDateKey)
   const sessionXp = isCurrentWeekTraining ? calculateTrainingSessionXp(resolvedState.currentStreak) : 0
-  const reachedGoalBefore = completedDateKeys.length >= resolvedState.weeklyGoal
+  const completedDaysBefore = completedDateKeys.filter((dateKey) => dateKey !== targetDateKey).length
+  const reachedGoalBefore = completedDaysBefore >= resolvedState.weeklyGoal
   const reachedGoalAfter = completedDateKeys.length >= resolvedState.weeklyGoal
   const bonusXp = !reachedGoalBefore && reachedGoalAfter ? calculateWeeklyGoalBonusXp(resolvedState.currentStreak) : 0
 

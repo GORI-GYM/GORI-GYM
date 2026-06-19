@@ -22,12 +22,17 @@ import {
 import type { User } from "firebase/auth"
 import { db } from "@/firebase"
 import type { TrainingEntry } from "@/sections/TrainingPage"
+import type { DailyMissionDay, DailyMissionHistoryEntry, DailyMissionSettings } from "@/utils/dailyMission"
 
 export interface UserProfile {
   displayName: string
   level: number
   xp: number
   trainingDays: number
+  lastTrainingAt?: string | null
+  gorillaEmotion?: string
+  gorillaEmotionUpdatedAt?: string
+  gorillaSkippedDays?: number
   monthlyXP?: number
   monthlyLevel?: number
   monthResetDate?: string
@@ -43,9 +48,9 @@ export interface UserProfile {
   weeklyXP?: number
   streakFreezeAvailable?: boolean
   weekStartDate?: string
-  dailyMissionCurrentDay?: unknown
-  dailyMissionHistory?: unknown
-  dailyMissionSettings?: unknown
+  dailyMissionCurrentDay?: DailyMissionDay
+  dailyMissionHistory?: DailyMissionHistoryEntry[]
+  dailyMissionSettings?: DailyMissionSettings
 }
 
 interface FirestoreTrainingLog extends TrainingEntry {
@@ -249,6 +254,10 @@ export async function mergeLocalDataToFirestore(user: User, payload: SyncPayload
     level: Math.max(payload.profile.level, remoteProfile?.level ?? 0),
     xp: Math.max(payload.profile.xp, remoteProfile?.xp ?? 0),
     trainingDays: Math.max(payload.profile.trainingDays, remoteProfile?.trainingDays ?? 0, getTrainingDays(mergedEntries)),
+    lastTrainingAt: payload.profile.lastTrainingAt ?? remoteProfile?.lastTrainingAt ?? null,
+    gorillaEmotion: payload.profile.gorillaEmotion ?? remoteProfile?.gorillaEmotion,
+    gorillaEmotionUpdatedAt: payload.profile.gorillaEmotionUpdatedAt ?? remoteProfile?.gorillaEmotionUpdatedAt,
+    gorillaSkippedDays: payload.profile.gorillaSkippedDays ?? remoteProfile?.gorillaSkippedDays,
     monthlyXP: Math.max(payload.profile.monthlyXP ?? 0, remoteProfile?.monthlyXP ?? 0),
     monthlyLevel: Math.max(payload.profile.monthlyLevel ?? 1, remoteProfile?.monthlyLevel ?? 1),
     monthResetDate: payload.profile.monthResetDate || remoteProfile?.monthResetDate,
@@ -310,6 +319,16 @@ export function subscribeToUserTrainingData(
           monthlyLevel: data?.monthlyLevel ?? 1,
           monthResetDate: data?.monthResetDate,
           breakdown: data?.breakdown,
+          weeklyGoal: data?.weeklyGoal,
+          currentStreak: data?.currentStreak,
+          weeklyXP: data?.weeklyXP,
+          streakFreezeAvailable: data?.streakFreezeAvailable,
+          weekStartDate: data?.weekStartDate,
+          friendCode: data?.friendCode,
+          friends: data?.friends,
+          dailyMissionCurrentDay: data?.dailyMissionCurrentDay,
+          dailyMissionHistory: data?.dailyMissionHistory,
+          dailyMissionSettings: data?.dailyMissionSettings,
         }
         emit()
       },

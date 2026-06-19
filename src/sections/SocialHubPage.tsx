@@ -30,7 +30,7 @@ export default function SocialHubPage({ profile, onProfileChange, socialBadgeCou
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">SOCIAL</div>
             <h1 className="mt-2 text-2xl font-black text-white">フレンド & ギルド</h1>
             <p className="mt-2 text-sm leading-6 text-white/70">
-              フレンド管理、プロフィール編集、ギルド機能をこのタブに統合しました。
+              フレンド追加、プロフィール編集、ギルド機能をこのタブでまとめて管理できます。
             </p>
           </div>
           {socialBadgeCount > 0 ? (

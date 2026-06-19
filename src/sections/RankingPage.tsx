@@ -113,7 +113,7 @@ export default function RankingPage({ socialBadgeCount = 0 }: RankingPageProps) 
           </div>
           <h1 className="mt-4 text-2xl font-black">ランキング</h1>
           <p className="mt-3 text-sm leading-6 text-white/72">
-            ログインすると、今月の総重量ランキングやトレーニング日数ランキングを確認できます。
+            ログインすると、全体ランキングやフレンド内ランキングを確認できます。
           </p>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#F5A623]/25 bg-black/30 px-4 py-2 text-xs font-bold text-[#FFE7B0]">
             <IconUsers className="h-4 w-4 text-[#F5A623]" />
@@ -136,7 +136,7 @@ export default function RankingPage({ socialBadgeCount = 0 }: RankingPageProps) 
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#F5A623]">RANKING ARENA</div>
             <h1 className="mt-2 text-2xl font-black">月間ランキング</h1>
             <p className="mt-2 text-sm leading-6 text-white/70">
-              今月の総重量とトレーニング日数を集計し、全体・フレンド内で順位表示します。
+              今月の総ボリュームとトレーニング日数を比較し、全体・フレンド内で順位を確認できます。
             </p>
           </div>
           <div className="rounded-[24px] border border-[#F5A623]/20 bg-black/25 px-4 py-3 text-right">
@@ -148,8 +148,8 @@ export default function RankingPage({ socialBadgeCount = 0 }: RankingPageProps) 
 
       <section className="mt-5 grid grid-cols-2 gap-3">
         {[
-          { key: "volume", label: "総重量", description: "重量×回数×セット" },
-          { key: "frequency", label: "日数", description: "今月のトレ日数" },
+          { key: "volume", label: "総ボリューム", description: "持ち上げた総重量で比較" },
+          { key: "frequency", label: "日数", description: "今月のトレーニング日数" },
         ].map((option) => (
           <button
             key={option.key}
@@ -207,16 +207,16 @@ export default function RankingPage({ socialBadgeCount = 0 }: RankingPageProps) 
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black">{scope === "friends" ? "フレンド内ランキング" : "全体ランキング"}</h2>
           <span className="rounded-full bg-[#F5A623]/15 px-3 py-1 text-xs font-bold text-[#F5A623]">
-            {metric === "volume" ? "総重量" : "日数"}
+            {metric === "volume" ? "総ボリューム" : "日数"}
           </span>
         </div>
 
-        {isFetching ? <div className="mt-4 text-sm text-white/60">ランキングを集計中...</div> : null}
+        {isFetching ? <div className="mt-4 text-sm text-white/60">ランキングを取得中...</div> : null}
         {errorMessage ? <div className="mt-4 text-sm text-[#FFE7B0]">{errorMessage}</div> : null}
 
         {!isFetching && rankingEntries.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-[#F5A623]/20 px-4 py-5 text-sm text-white/60">
-            今月のトレーニング記録がまだありません。
+            まだ今月のトレーニング記録がありません。
           </div>
         ) : (
           <div className="mt-4 space-y-3">
