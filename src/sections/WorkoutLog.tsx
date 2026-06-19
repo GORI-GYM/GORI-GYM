@@ -248,7 +248,7 @@ export default function WorkoutLog({ onClick, onCtaClick, todaySummary, training
               className="flex h-9 w-9 items-center justify-center rounded-full border border-[#FFF1A8] bg-[#f8fbff] text-[#D4A900] transition hover:bg-[#FFF8D6] dark:border-[#D4A900]/25 dark:bg-[#111111] dark:text-[#FFE066]"
               aria-label="Previous month"
             >
-              <span className="text-lg leading-none">窶ｹ</span>
+              <span className="text-lg leading-none">‹</span>
             </button>
             <button
               type="button"
@@ -256,7 +256,7 @@ export default function WorkoutLog({ onClick, onCtaClick, todaySummary, training
               className="flex h-9 w-9 items-center justify-center rounded-full border border-[#FFF1A8] bg-[#f8fbff] text-[#D4A900] transition hover:bg-[#FFF8D6] dark:border-[#D4A900]/25 dark:bg-[#111111] dark:text-[#FFE066]"
               aria-label="Next month"
             >
-              <span className="text-lg leading-none">窶ｺ</span>
+              <span className="text-lg leading-none">›</span>
             </button>
           </div>
         </div>

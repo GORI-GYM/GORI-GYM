@@ -387,7 +387,7 @@ const ja = {
     volume: "総負荷",
     estimatedMax: "推定1RM",
     setMenu: "セットメニュー",
-    memo: "Memo",
+    memo: "メモ",
     memoPlaceholder: "フォームの気づきや次回目標を記録",
     defaultMemo: "安定したフォームで完了。次回はさらに重量アップを狙う。",
     personalBest: "自己ベスト",

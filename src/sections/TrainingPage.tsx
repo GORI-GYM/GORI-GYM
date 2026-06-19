@@ -186,9 +186,9 @@ function normalizeExerciseName(value: string) {
 
 function getBig3Key(exerciseName: string): keyof Big3Records | null {
   const normalized = normalizeExerciseName(exerciseName)
-  if (normalized === "benchpress" || normalized === normalizeExerciseName("繝吶Φ繝√・繝ｬ繧ｹ")) return "benchPress"
-  if (normalized === "deadlift" || normalized === normalizeExerciseName("繝・ャ繝峨Μ繝輔ヨ")) return "deadlift"
-  if (normalized === "squat" || normalized === normalizeExerciseName("繧ｹ繧ｯ繝ｯ繝・ヨ")) return "squat"
+  if (normalized === "benchpress" || normalized === normalizeExerciseName("ベンチプレス")) return "benchPress"
+  if (normalized === "deadlift" || normalized === normalizeExerciseName("デッドリフト")) return "deadlift"
+  if (normalized === "squat" || normalized === normalizeExerciseName("スクワット")) return "squat"
   return null
 }
 
@@ -790,7 +790,7 @@ export default function TrainingPage({
           <EmptyState
             icon={<IconGorillaFace className="h-10 w-10" />}
             title="最初のトレーニングを記録しよう！"
-            description="まだトレーニング記録がありません。最初の1回を残すと、進捗・BIG3・成長履歴がここからどんどん育っていきます。"
+            description="まだトレーニング記録がありません。最初の1回を残すと、進捗・BIG3・成長履歴がここからどんどん増えていきます。"
           />
         ) : null}
         <AnimatePresence>
@@ -891,7 +891,8 @@ export default function TrainingPage({
                     textShadow: "0 0 14px rgba(255,255,255,0.95)",
                   }}
                 >
-                  笘・                </motion.div>
+                  ×
+                </motion.div>
               ))}
               <div className="relative flex items-center gap-3">
                 <motion.div
@@ -1040,7 +1041,8 @@ export default function TrainingPage({
                                     set.completed ? "border-[#D4A017] bg-[#D4A017] text-white shadow-[0_10px_24px_rgba(212,169,0,0.28)]" : "border-[#FFD54A] bg-[#FFF8D6] text-[#D4A017] hover:bg-[#FFF1A8]"
                                   }`}
                                 >
-                                  笨・                                </button>
+                                  ＋
+                                </button>
                               </div>
 
                               <div className="mt-4 grid gap-3">
@@ -1052,7 +1054,8 @@ export default function TrainingPage({
                                       onClick={() => adjustSessionSetWeight(exercise.id, index, -1)}
                                       className="flex h-11 min-w-11 items-center justify-center rounded-2xl border border-[#FFD54A] bg-[#FFF8D6] text-lg font-semibold text-[#D4A017] transition hover:bg-[#FFF1A8]"
                                     >
-                                      竏・                                    </button>
+                                      −
+                                    </button>
                                     <div className="flex-1 rounded-2xl border border-[#FFE066] bg-gradient-to-br from-white to-[#FFF8D6] px-3 py-3 text-center text-base font-semibold text-slate-800">
                                       {formatWeight(set.weight)}kg
                                     </div>
@@ -1073,7 +1076,8 @@ export default function TrainingPage({
                                       onClick={() => adjustSessionSetReps(exercise.id, index, -1)}
                                       className="flex h-11 min-w-11 items-center justify-center rounded-2xl border border-[#FFD54A] bg-[#FFF8D6] text-lg font-semibold text-[#D4A017] transition hover:bg-[#FFF1A8]"
                                     >
-                                      竏・                                    </button>
+                                      −
+                                    </button>
                                     <div className="flex-1 rounded-2xl border border-[#FFE066] bg-gradient-to-br from-white to-[#FFF8D6] px-3 py-3 text-center text-base font-semibold text-slate-800">
                                       {set.reps ?? 0}
                                     </div>

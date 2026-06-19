@@ -647,7 +647,7 @@ export default function RoutinePage({ routines, onRoutinesChange, onStartRoutine
                             <div className="mb-3 flex items-center justify-between gap-2">
                               <div>
                                 <div className="text-sm font-semibold text-[#1E3A8A]">{t("routine.targetWeight")}</div>
-                                <div className="text-xs text-[#64748B]">Setごとの重量を調整</div>
+                                <div className="text-xs text-[#64748B]">セットごとの重量を調整</div>
                               </div>
                               <span className="rounded-full bg-[#FFF8D6] px-3 py-1 text-xs font-semibold text-[#D4A900]">
                                 {exercise.sets} sets

@@ -391,8 +391,8 @@ export default function CharacterPage({
           ) : (
             <EmptyState
               icon={<IconGorillaFace className="h-10 w-10" />}
-              title="トレーニングしてゴルを育てよう！"
-              description="成長履歴は、トレーニングを記録するとここに追加されます。まずは1回ワークアウトして、ゴルの進化を始めましょう。"
+              title="トレーニングしてゴリラを育てよう！"
+              description="成長履歴は、トレーニングを記録するとここに追加されます。まずは1回ワークアウトして、ゴリラの進化を始めましょう。"
             />
           )}
         </div>
