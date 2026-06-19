@@ -27,6 +27,7 @@ export const CHARACTER_GROWTH_MAP: Record<CharacterId, [string, string, string, 
 }
 
 export function getCharacterGrowthImage(characterId: CharacterId, level: number) {
-  const normalizedLevel = Math.max(1, Math.min(5, Math.floor(level)))
-  return CHARACTER_GROWTH_MAP[characterId][normalizedLevel - 1]
+  const normalizedLevel = Math.max(1, Math.min(20, Math.floor(level)))
+  const growthIndex = Math.min(4, Math.floor((normalizedLevel - 1) / 4))
+  return CHARACTER_GROWTH_MAP[characterId][growthIndex]
 }

@@ -5,6 +5,7 @@ import type { Big3OneRMRecords } from "@/sections/TrainingPage"
 import BackupSection from "@/sections/BackupSection"
 import EmptyState from "@/components/EmptyState"
 import { IconGorillaFace } from "@/icons"
+import type { MonthlyCharacterProgressSummary } from "@/utils/monthlyCharacterProgress"
 
 type MuscleGroupKey = "chest" | "arms" | "legs" | "back" | "shoulders" | "core"
 
@@ -21,6 +22,7 @@ interface CharacterPageProps {
   xp: number
   selectedCharacter: CharacterId
   monthlyCharacterLevel: number
+  monthlyCharacterProgress?: MonthlyCharacterProgressSummary
   onBackupImportComplete?: () => void
   bodyPartXP: {
     chest: number
@@ -215,11 +217,24 @@ export default function CharacterPage({
   bodyPartXP,
   monthlyHistory,
   monthlyCharacterLevel,
+  monthlyCharacterProgress,
   selectedCharacter,
   big3OneRMRecords,
   onBackupImportComplete,
 }: CharacterPageProps) {
   const { t } = useTranslation()
+  const safeMonthlyCharacterProgress = monthlyCharacterProgress ?? {
+    monthlyXP: 0,
+    monthlyLevel: monthlyCharacterLevel,
+    monthResetDate: "",
+    breakdown: { trainingXP: 0, bonusXP: 0, multiplierApplied: 1 },
+    currentLevelXpFloor: 0,
+    nextLevelXp: null,
+    xpIntoLevel: 0,
+    xpForNextLevel: 0,
+    xpRemainingToNextLevel: 0,
+    progressPercent: 0,
+  }
   const muscleGroups: MuscleGroup[] = [
     { key: "chest", name: "CHEST", level: Math.min(10, Math.max(1, Math.floor(bodyPartXP.chest / 5000) + 1)), workouts: Math.max(1, Math.round(bodyPartXP.chest / 1200)), currentXP: bodyPartXP.chest % 5000, maxXP: 5000 },
     { key: "arms", name: "ARMS", level: Math.min(10, Math.max(1, Math.floor(bodyPartXP.arms / 5000) + 1)), workouts: Math.max(1, Math.round(bodyPartXP.arms / 1200)), currentXP: bodyPartXP.arms % 5000, maxXP: 5000 },
@@ -246,6 +261,12 @@ export default function CharacterPage({
           minHeight: "340px",
         }}
       >
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: "radial-gradient(circle at center, rgba(245,166,35,0.28) 0%, rgba(245,166,35,0.1) 30%, transparent 62%)",
+          }}
+        />
         <div
           className="absolute inset-0 opacity-60"
           style={{
@@ -279,6 +300,41 @@ export default function CharacterPage({
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 w-full max-w-[320px]">
+              <div className="col-span-2 rounded-2xl border border-[#FFE066] bg-[#111111] px-4 py-4 text-white shadow-[0_12px_28px_rgba(245,166,35,0.18)] dark:border-[#D4A900]/20">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#FFD27A]">Monthly Gorilla XP</div>
+                    <div className="mt-2 text-3xl font-black">Lv{safeMonthlyCharacterProgress.monthlyLevel}<span className="ml-2 text-sm font-semibold text-[#FFD27A]">/20</span></div>
+                    <div className="mt-1 text-sm text-[#FDE7B0]">{safeMonthlyCharacterProgress.monthlyXP.toLocaleString()} XP</div>
+                  </div>
+                  <div className="rounded-2xl border border-[#F5A623]/40 bg-white/10 px-3 py-2 text-right">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#FFD27A]">Next Level</div>
+                    <div className="mt-1 text-sm font-bold">
+                      {safeMonthlyCharacterProgress.nextLevelXp === null ? "MAX LEVEL" : `${safeMonthlyCharacterProgress.xpRemainingToNextLevel} XP`}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#F5A623] via-[#FFD400] to-[#FFF07A]"
+                    style={{ width: `${safeMonthlyCharacterProgress.progressPercent}%` }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-xl border border-[#F5A623]/20 bg-white/5 px-2 py-2">
+                    <div className="text-[#FFD27A]">トレXP</div>
+                    <div className="mt-1 font-bold">{safeMonthlyCharacterProgress.breakdown.trainingXP}</div>
+                  </div>
+                  <div className="rounded-xl border border-[#F5A623]/20 bg-white/5 px-2 py-2">
+                    <div className="text-[#FFD27A]">ボーナスXP</div>
+                    <div className="mt-1 font-bold">{safeMonthlyCharacterProgress.breakdown.bonusXP}</div>
+                  </div>
+                  <div className="rounded-xl border border-[#F5A623]/20 bg-white/5 px-2 py-2">
+                    <div className="text-[#FFD27A]">倍率</div>
+                    <div className="mt-1 font-bold">x{safeMonthlyCharacterProgress.breakdown.multiplierApplied}</div>
+                  </div>
+                </div>
+              </div>
               {muscleGroups.slice(0, 4).map((group) => (
                 <div
                   key={group.key}

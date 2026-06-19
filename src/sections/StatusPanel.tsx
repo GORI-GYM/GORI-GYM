@@ -3,6 +3,7 @@ import { IconSword, IconShield, IconStar } from "@/icons"
 import { useTranslation } from "react-i18next"
 import type { Big3OneRMRecords, Big3Records } from "@/sections/TrainingPage"
 import type { WeeklyProgressSummary } from "@/utils/weeklyProgress"
+import type { MonthlyCharacterProgressSummary } from "@/utils/monthlyCharacterProgress"
 
 interface Stat {
   icon: React.ReactNode
@@ -18,11 +19,24 @@ interface StatusPanelProps {
   big3OneRMRecords: Big3OneRMRecords
   motivationMessage?: string
   weeklyProgress: WeeklyProgressSummary
+  monthlyCharacterProgress?: MonthlyCharacterProgressSummary
   onOpenGoalSettings?: () => void
 }
 
-export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecords, motivationMessage, weeklyProgress, onOpenGoalSettings }: StatusPanelProps) {
+export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecords, motivationMessage, weeklyProgress, monthlyCharacterProgress, onOpenGoalSettings }: StatusPanelProps) {
   const { t } = useTranslation()
+  const safeMonthlyCharacterProgress = monthlyCharacterProgress ?? {
+    monthlyXP: 0,
+    monthlyLevel: 1,
+    monthResetDate: "",
+    breakdown: { trainingXP: 0, bonusXP: 0, multiplierApplied: 1 },
+    currentLevelXpFloor: 0,
+    nextLevelXp: null,
+    xpIntoLevel: 0,
+    xpForNextLevel: 0,
+    xpRemainingToNextLevel: 0,
+    progressPercent: 0,
+  }
   const streakGlow = weeklyProgress.currentStreak >= 8 ? "shadow-[0_0_36px_rgba(255,120,0,0.55)]" : weeklyProgress.currentStreak >= 4 ? "shadow-[0_0_28px_rgba(255,166,35,0.45)]" : "shadow-[0_0_18px_rgba(245,166,35,0.28)]"
   const progressPct = Math.min(100, Math.round((weeklyProgress.completedDays / weeklyProgress.weeklyGoal) * 100))
   const weekStart = new Date(`${weeklyProgress.weekStartDate}T00:00:00`)
@@ -66,6 +80,24 @@ export default function StatusPanel({ stats: _stats, big3Records, big3OneRMRecor
         </div>
 
         <div className="mb-4 rounded-3xl border border-[#F5A623]/30 bg-gradient-to-br from-[#111111] via-[#1A1A1A] to-[#2A1B00] p-4 text-white">
+          <div className="mb-4 rounded-2xl border border-[#F5A623]/30 bg-white/5 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#FFD27A]">Gorilla Level</p>
+                <div className="mt-2 text-3xl font-black">Lv{safeMonthlyCharacterProgress.monthlyLevel}<span className="ml-2 text-sm font-semibold text-[#FFD27A]">/ 20</span></div>
+                <div className="mt-1 text-sm text-[#FDE7B0]">今月XP {safeMonthlyCharacterProgress.monthlyXP.toLocaleString()}</div>
+              </div>
+              <div className="rounded-2xl border border-[#F5A623]/40 bg-[#F5A623]/15 px-3 py-2 text-right">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#FFD27A]">Next</div>
+                <div className="mt-1 text-sm font-bold text-white">
+                  {safeMonthlyCharacterProgress.nextLevelXp === null ? "MAX" : `あと ${safeMonthlyCharacterProgress.xpRemainingToNextLevel} XP`}
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#F5A623] via-[#FFD400] to-[#FFF07A]" style={{ width: `${safeMonthlyCharacterProgress.progressPercent}%` }} />
+            </div>
+          </div>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#FFD27A]">Weekly Streak</p>

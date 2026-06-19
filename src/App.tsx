@@ -23,6 +23,7 @@ import { initialRoutines, type Routine } from "@/sections/routineData"
 import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMRecords, calculateBig3Records, calculateBig3OneRMRecords, type BodyPartXPMap, calculateBodyPartXPMap, calculateTotalXP, getLevelFromXP, LEVEL_THRESHOLDS, MAX_LEVEL, XP_PER_LEVEL } from "@/sections/TrainingPage"
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
 import { applyTrainingCompletion, calculateWeeklyProgressSummary, getStoredWeeklyProgressState, loadWeeklyProgressFromFirestore, persistWeeklyProgressState, resolveWeeklyProgress, saveWeeklyProgressToFirestore, type WeeklyProgressState } from "@/utils/weeklyProgress"
+import { calculateMonthlyCharacterProgressSummary, getStoredMonthlyCharacterProgressState, getMonthlyCharacterHistory, loadMonthlyCharacterProgressFromFirestore, persistMonthlyCharacterProgressState, resolveMonthlyCharacterProgress, saveMonthlyCharacterProgressToFirestore, type MonthlyCharacterProgressState } from "@/utils/monthlyCharacterProgress"
 
 const THEME_STORAGE_KEY = "gym-quest-theme"
 const ROUTINES_STORAGE_KEY = "gym-quest-routines"
@@ -199,72 +200,6 @@ function getNextLevelXp(level: number) {
   return level >= MAX_LEVEL ? currentLevelXP + XP_PER_LEVEL : (LEVEL_THRESHOLDS[level] ?? currentLevelXP + XP_PER_LEVEL)
 }
 
-function getEntryDate(entry: TrainingEntry) {
-  const now = new Date()
-  const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-  switch (entry.dateLabel) {
-    case "today":
-      return baseDate
-    case "yesterday":
-      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 1)
-    case "daysAgo":
-      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - (entry.daysAgo ?? 0))
-    case "weekAgo":
-      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 7)
-  }
-}
-
-function getMonthlyCharacterLevel(trainingDays: number) {
-  if (trainingDays >= 25) return 5
-  if (trainingDays >= 19) return 4
-  if (trainingDays >= 13) return 3
-  if (trainingDays >= 7) return 2
-  return 1
-}
-
-function getMonthKeyFromDate(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-}
-
-function getMonthlyTrainingDays(entries: TrainingEntry[], monthKey: string) {
-  const uniqueDays = new Set(
-    entries
-      .map((entry) => getEntryDate(entry))
-      .filter((entryDate) => getMonthKeyFromDate(entryDate) === monthKey)
-      .map((entryDate) => entryDate.toISOString().slice(0, 10)),
-  )
-
-  return uniqueDays.size
-}
-
-function getMonthlyCharacterHistory(entries: TrainingEntry[]): MonthlyCharacterHistoryEntry[] {
-  const formatter = new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long" })
-  const monthlyMap = entries.reduce<Map<string, { xp: number; workoutCount: number; date: Date; trainingDays: Set<string> }>>((map, entry) => {
-    const entryDate = getEntryDate(entry)
-    const monthKey = getMonthKeyFromDate(entryDate)
-    const current = map.get(monthKey) ?? { xp: 0, workoutCount: 0, date: new Date(entryDate.getFullYear(), entryDate.getMonth(), 1), trainingDays: new Set<string>() }
-    current.xp += Math.round(entry.sets.reduce((total, set) => total + set.weight * (set.reps ?? 0), 0) * 0.1)
-    current.workoutCount += 1
-    current.trainingDays.add(entryDate.toISOString().slice(0, 10))
-    map.set(monthKey, current)
-    return map
-  }, new Map())
-
-  return Array.from(monthlyMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([monthKey, value]) => {
-      return {
-        monthKey,
-        monthLabel: formatter.format(value.date),
-        level: getMonthlyCharacterLevel(value.trainingDays.size),
-        xp: value.xp,
-        workoutCount: value.workoutCount,
-        trainingDays: value.trainingDays.size,
-      }
-    })
-}
-
 function getStoredMonthlyCharacterHistory(): Record<string, StoredMonthlyCharacterHistoryEntry> {
   if (typeof window === "undefined") {
     return {}
@@ -346,6 +281,7 @@ function AppContent() {
   const [levelUpOverlayLevel, setLevelUpOverlayLevel] = useState<number | null>(null)
   const [pendingFriendRequestCount, setPendingFriendRequestCount] = useState(0)
   const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgressState>(getStoredWeeklyProgressState)
+  const [monthlyCharacterProgress, setMonthlyCharacterProgress] = useState<MonthlyCharacterProgressState>(getStoredMonthlyCharacterProgressState)
   const [showWeeklyGoalModal, setShowWeeklyGoalModal] = useState(false)
   const level = useMemo(() => getLevelFromXP(xp), [xp])
   const nextLevelXp = useMemo(() => getNextLevelXp(level), [level])
@@ -353,8 +289,9 @@ function AppContent() {
   const todayTrainingStatus = useMemo(() => getTodayTrainingStatus(trainingEntries), [trainingEntries])
   const computedMonthlyHistory = useMemo(() => getMonthlyCharacterHistory(trainingEntries), [trainingEntries])
   const [storedMonthlyHistory, setStoredMonthlyHistory] = useState<Record<string, StoredMonthlyCharacterHistoryEntry>>(getStoredMonthlyCharacterHistory)
-  const currentMonthKey = getMonthKeyFromDate(new Date())
-  const monthlyCharacterLevel = useMemo(() => getMonthlyCharacterLevel(getMonthlyTrainingDays(trainingEntries, currentMonthKey)), [currentMonthKey, trainingEntries])
+  const resolvedMonthlyCharacterProgress = useMemo(() => resolveMonthlyCharacterProgress(monthlyCharacterProgress), [monthlyCharacterProgress])
+  const monthlyCharacterProgressSummary = useMemo(() => calculateMonthlyCharacterProgressSummary(resolvedMonthlyCharacterProgress), [resolvedMonthlyCharacterProgress])
+  const monthlyCharacterLevel = monthlyCharacterProgressSummary.monthlyLevel
   const monthlyHistory = useMemo(
     () => getMergedMonthlyCharacterHistory(storedMonthlyHistory, computedMonthlyHistory),
     [computedMonthlyHistory, storedMonthlyHistory],
@@ -398,6 +335,13 @@ function AppContent() {
       setWeeklyProgress(resolvedWeeklyProgress)
     }
   }, [resolvedWeeklyProgress, weeklyProgress])
+
+  useEffect(() => {
+    persistMonthlyCharacterProgressState(resolvedMonthlyCharacterProgress)
+    if (JSON.stringify(resolvedMonthlyCharacterProgress) !== JSON.stringify(monthlyCharacterProgress)) {
+      setMonthlyCharacterProgress(resolvedMonthlyCharacterProgress)
+    }
+  }, [resolvedMonthlyCharacterProgress, monthlyCharacterProgress])
 
   useEffect(() => {
     const nextHistory = buildMonthlyCharacterHistoryRecord(computedMonthlyHistory)
@@ -468,14 +412,19 @@ function AppContent() {
 
     const syncUserData = async () => {
       const remoteWeeklyProgress = await loadWeeklyProgressFromFirestore(user)
+      const remoteMonthlyCharacterProgress = await loadMonthlyCharacterProgressFromFirestore(user)
       if (remoteWeeklyProgress) {
         setWeeklyProgress(remoteWeeklyProgress)
+      }
+      if (remoteMonthlyCharacterProgress) {
+        setMonthlyCharacterProgress(remoteMonthlyCharacterProgress)
       }
       const mergedData = await mergeLocalDataToFirestore(user, {
         trainingEntries,
         profile: {
           ...userProfile,
           ...weeklyProgress,
+          ...monthlyCharacterProgress,
         },
       })
 
@@ -484,6 +433,13 @@ function AppContent() {
       }
 
       isApplyingRemoteSnapshotRef.current = true
+      setMonthlyCharacterProgress((current) => ({
+        ...current,
+        monthlyXP: mergedData.profile.monthlyXP ?? current.monthlyXP,
+        monthlyLevel: mergedData.profile.monthlyLevel ?? current.monthlyLevel,
+        monthResetDate: mergedData.profile.monthResetDate ?? current.monthResetDate,
+        breakdown: mergedData.profile.breakdown ?? current.breakdown,
+      }))
       setTrainingEntries(mergedData.trainingEntries)
       lastSyncedTrainingEntriesRef.current = JSON.stringify(mergedData.trainingEntries)
       lastSyncedProfileRef.current = JSON.stringify(mergedData.profile)
@@ -557,6 +513,10 @@ function AppContent() {
       weeklyXP: resolvedWeeklyProgress.weeklyXP,
       streakFreezeAvailable: resolvedWeeklyProgress.streakFreezeAvailable,
       weekStartDate: resolvedWeeklyProgress.weekStartDate,
+      monthlyXP: resolvedMonthlyCharacterProgress.monthlyXP,
+      monthlyLevel: resolvedMonthlyCharacterProgress.monthlyLevel,
+      monthResetDate: resolvedMonthlyCharacterProgress.monthResetDate,
+      breakdown: resolvedMonthlyCharacterProgress.breakdown,
     }
     const serializedProfile = JSON.stringify(nextProfile)
     if (serializedProfile === lastSyncedProfileRef.current) {
@@ -566,10 +526,22 @@ function AppContent() {
     lastSyncedProfileRef.current = serializedProfile
     void saveUserProfile(user.uid, nextProfile)
     void saveWeeklyProgressToFirestore(user, resolvedWeeklyProgress)
-  }, [level, resolvedWeeklyProgress, trainingEntries, user, xp])
+    void saveMonthlyCharacterProgressToFirestore(user, resolvedMonthlyCharacterProgress)
+  }, [level, resolvedMonthlyCharacterProgress, resolvedWeeklyProgress, trainingEntries, user, userProfile, xp])
 
   const handleTrainingSaved = (targetDateKey: string) => {
-    setWeeklyProgress((current) => applyTrainingCompletion(trainingEntries, current, targetDateKey).nextState)
+    const result = applyTrainingCompletion(trainingEntries, resolvedWeeklyProgress, targetDateKey)
+    setWeeklyProgress(result.nextState)
+    setMonthlyCharacterProgress((current) => resolveMonthlyCharacterProgress({
+      monthlyXP: current.monthlyXP + result.sessionXp + result.bonusXp,
+      monthlyLevel: current.monthlyLevel,
+      monthResetDate: current.monthResetDate,
+      breakdown: {
+        trainingXP: current.breakdown.trainingXP + result.sessionXp,
+        bonusXP: current.breakdown.bonusXP + result.bonusXp,
+        multiplierApplied: weeklyProgressSummary.xpMultiplier,
+      },
+    }))
   }
 
   const handleReturnFromWorkout = () => {
@@ -619,6 +591,7 @@ function AppContent() {
           bodyPartXP={bodyPartXP}
           monthlyHistory={monthlyHistory}
           monthlyCharacterLevel={monthlyCharacterLevel}
+          monthlyCharacterProgress={monthlyCharacterProgressSummary}
           selectedCharacter={selectedCharacter}
           big3OneRMRecords={big3OneRMRecords}
           onBackupImportComplete={handleBackupImportComplete}
@@ -707,6 +680,7 @@ function AppContent() {
           big3OneRMRecords={big3OneRMRecords}
           motivationMessage={t("home.motivation")}
           weeklyProgress={weeklyProgressSummary}
+          monthlyCharacterProgress={monthlyCharacterProgressSummary}
           onOpenGoalSettings={() => setShowWeeklyGoalModal(true)}
         />
         {showWeeklyGoalModal && (

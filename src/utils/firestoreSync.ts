@@ -28,6 +28,14 @@ export interface UserProfile {
   level: number
   xp: number
   trainingDays: number
+  monthlyXP?: number
+  monthlyLevel?: number
+  monthResetDate?: string
+  breakdown?: {
+    trainingXP: number
+    bonusXP: number
+    multiplierApplied: number
+  }
   friendCode?: string
   friends?: string[]
   weeklyGoal?: number
@@ -238,6 +246,10 @@ export async function mergeLocalDataToFirestore(user: User, payload: SyncPayload
     level: Math.max(payload.profile.level, remoteProfile?.level ?? 0),
     xp: Math.max(payload.profile.xp, remoteProfile?.xp ?? 0),
     trainingDays: Math.max(payload.profile.trainingDays, remoteProfile?.trainingDays ?? 0, getTrainingDays(mergedEntries)),
+    monthlyXP: Math.max(payload.profile.monthlyXP ?? 0, remoteProfile?.monthlyXP ?? 0),
+    monthlyLevel: Math.max(payload.profile.monthlyLevel ?? 1, remoteProfile?.monthlyLevel ?? 1),
+    monthResetDate: payload.profile.monthResetDate || remoteProfile?.monthResetDate,
+    breakdown: payload.profile.breakdown ?? remoteProfile?.breakdown,
   }
 
   const batch = writeBatch(db)
@@ -291,6 +303,10 @@ export function subscribeToUserTrainingData(
           level: data?.level ?? 1,
           xp: data?.xp ?? 0,
           trainingDays: data?.trainingDays ?? 0,
+          monthlyXP: data?.monthlyXP ?? 0,
+          monthlyLevel: data?.monthlyLevel ?? 1,
+          monthResetDate: data?.monthResetDate,
+          breakdown: data?.breakdown,
         }
         emit()
       },
