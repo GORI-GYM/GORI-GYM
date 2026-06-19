@@ -19,7 +19,7 @@ interface DailyMissionSectionProps {
   onSaveSettings: (settings: DailyMissionSettings) => void
 }
 
-const bodyParts: MissionBodyPart[] = ["chest", "back", "legs", "shoulders", "arms"]
+const bodyParts: MissionBodyPart[] = ["chest", "back", "legs", "shoulders", "arms", "biceps", "triceps"]
 
 const bodyPartTheme: Record<MissionBodyPart, { accent: string; glow: string; badge: string }> = {
   chest: { accent: "#F5A623", glow: "rgba(245,166,35,0.35)", badge: "from-[#F5A623] to-[#FFD27A]" },
@@ -27,6 +27,8 @@ const bodyPartTheme: Record<MissionBodyPart, { accent: string; glow: string; bad
   legs: { accent: "#D4A017", glow: "rgba(212,160,23,0.35)", badge: "from-[#D4A017] to-[#FFE08A]" },
   shoulders: { accent: "#FFB800", glow: "rgba(255,184,0,0.35)", badge: "from-[#FFB800] to-[#FFF0A8]" },
   arms: { accent: "#C98A00", glow: "rgba(201,138,0,0.35)", badge: "from-[#C98A00] to-[#FFD27A]" },
+  biceps: { accent: "#C98A00", glow: "rgba(201,138,0,0.35)", badge: "from-[#C98A00] to-[#FFD27A]" },
+  triceps: { accent: "#A66B00", glow: "rgba(166,107,0,0.35)", badge: "from-[#A66B00] to-[#F5D08A]" },
 }
 
 function HistoryBadge({ entry }: { entry: DailyMissionHistoryEntry }) {

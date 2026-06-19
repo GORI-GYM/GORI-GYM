@@ -14,7 +14,8 @@ const bodyPartFilters: Array<{ key: "all" | MissionBodyPart; label: string }> = 
   { key: "back", label: "背中" },
   { key: "legs", label: "脚" },
   { key: "shoulders", label: "肩" },
-  { key: "arms", label: "腕" },
+  { key: "biceps", label: "上腕二頭筋" },
+  { key: "triceps", label: "上腕三頭筋" },
 ]
 
 const difficultyStyles = {

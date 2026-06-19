@@ -72,9 +72,13 @@ export function calculateGorillaBattleStats(entries: TrainingEntry[], currentStr
     .filter((entry) => entry.bodyPart === "BACK")
     .reduce((sum, entry) => sum + getEntryVolume(entry), 0)
 
+  const armVolume = monthlyEntries
+    .filter((entry) => entry.bodyPart === "BICEPS" || entry.bodyPart === "TRICEPS")
+    .reduce((sum, entry) => sum + getEntryVolume(entry), 0)
+
   const trainingDays = new Set(monthlyEntries.map((entry) => getEntryDateKey(entry))).size
 
-  const punch = Math.floor(chestVolume / 100)
+  const punch = Math.floor((chestVolume + armVolume * 0.25) / 100)
   const speed = Math.floor(legsVolume / 100)
   const defense = Math.floor(backVolume / 100)
   const stamina = trainingDays * 10

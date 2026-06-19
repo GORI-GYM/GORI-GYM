@@ -79,7 +79,7 @@ export interface AiTrainerAnalysis {
 export const AI_TRAINER_WEEKLY_REPORT_STORAGE_KEY = "gym-quest-ai-trainer-weekly-report"
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const BODY_PART_ORDER: ExerciseBodyPart[] = ["chest", "back", "legs", "shoulders", "arms"]
+const BODY_PART_ORDER: ExerciseBodyPart[] = ["chest", "back", "legs", "shoulders", "biceps", "triceps"]
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -126,8 +126,9 @@ function mapTrainingBodyPartToExerciseBodyPart(bodyPart: TrainingBodyPart): Exer
     case "SHOULDERS":
       return "shoulders"
     case "BICEPS":
+      return "biceps"
     case "TRICEPS":
-      return "arms"
+      return "triceps"
   }
 }
 

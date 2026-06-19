@@ -11,7 +11,7 @@ export const DAILY_MISSION_HISTORY_STORAGE_KEY = "gym-quest-daily-mission-histor
 export const DAILY_MISSION_SETTINGS_STORAGE_KEY = "gym-quest-daily-mission-settings"
 export const DAILY_MISSION_XP = 100
 
-export type MissionBodyPart = "chest" | "back" | "legs" | "shoulders" | "arms"
+export type MissionBodyPart = "chest" | "back" | "legs" | "shoulders" | "biceps" | "triceps" | "arms"
 export type TrainingBodyPart = "CHEST" | "BACK" | "SHOULDERS" | "BICEPS" | "TRICEPS" | "LEGS"
 
 export interface MissionExerciseOption {
@@ -67,8 +67,21 @@ const BODY_PART_LABELS: Record<MissionBodyPart, string> = {
   back: "背中",
   legs: "脚",
   shoulders: "肩",
+  biceps: "上腕二頭筋",
+  triceps: "上腕三頭筋",
   arms: "腕",
 }
+
+const ARM_PRESET_EXERCISES: MissionExerciseOption[] = [
+  { name: "アームカール", bodyPart: "arms", trainingBodyPart: "BICEPS" },
+  { name: "ハンマーカール", bodyPart: "arms", trainingBodyPart: "BICEPS" },
+  { name: "プリーチャーカール", bodyPart: "arms", trainingBodyPart: "BICEPS" },
+  { name: "コンセントレーションカール", bodyPart: "arms", trainingBodyPart: "BICEPS" },
+  { name: "トライセプスエクステンション", bodyPart: "arms", trainingBodyPart: "TRICEPS" },
+  { name: "スカルクラッシャー", bodyPart: "arms", trainingBodyPart: "TRICEPS" },
+  { name: "ケーブルプレスダウン", bodyPart: "arms", trainingBodyPart: "TRICEPS" },
+  { name: "ディップス", bodyPart: "arms", trainingBodyPart: "TRICEPS" },
+]
 
 const PRESET_EXERCISES: Record<MissionBodyPart, MissionExerciseOption[]> = {
   chest: [
@@ -91,11 +104,9 @@ const PRESET_EXERCISES: Record<MissionBodyPart, MissionExerciseOption[]> = {
     { name: "サイドレイズ", bodyPart: "shoulders", trainingBodyPart: "SHOULDERS" },
     { name: "フロントレイズ", bodyPart: "shoulders", trainingBodyPart: "SHOULDERS" },
   ],
-  arms: [
-    { name: "アームカール", bodyPart: "arms", trainingBodyPart: "BICEPS" },
-    { name: "トライセプスエクステンション", bodyPart: "arms", trainingBodyPart: "TRICEPS" },
-    { name: "ハンマーカール", bodyPart: "arms", trainingBodyPart: "BICEPS" },
-  ],
+  biceps: ARM_PRESET_EXERCISES.filter((exercise) => exercise.trainingBodyPart === "BICEPS").map((exercise) => ({ ...exercise, bodyPart: "biceps" })),
+  triceps: ARM_PRESET_EXERCISES.filter((exercise) => exercise.trainingBodyPart === "TRICEPS").map((exercise) => ({ ...exercise, bodyPart: "triceps" })),
+  arms: ARM_PRESET_EXERCISES,
 }
 
 function normalizeNumber(value: unknown, fallback: number) {
