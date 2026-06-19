@@ -11,6 +11,7 @@ import AuthPage from "@/sections/AuthPage"
 import CharacterPage from "@/sections/CharacterPage"
 import ProfilePage from "@/sections/ProfilePage"
 import SocialPage from "@/sections/SocialPage"
+import RankingPage from "@/sections/RankingPage"
 import TrainingPage from "@/sections/TrainingPage"
 import WorkoutPage from "@/sections/WorkoutPage"
 import AchievementsPage from "@/sections/AchievementsPage"
@@ -145,7 +146,7 @@ const PLAYER = {
   motivationMessage: "Every rep is a step toward greatness.",
 }
 
-type NavTab = "home" | "routine" | "training" | "character" | "social" | "achievements" | "auth"
+type NavTab = "home" | "routine" | "training" | "character" | "social" | "ranking" | "achievements" | "auth"
 
 interface HomeTrainingSummary {
   date: string
@@ -596,6 +597,10 @@ function AppContent() {
           <SocialPage profile={userProfile} />
         </>
       )
+    }
+
+    if (activeTab === "ranking") {
+      return <RankingPage socialBadgeCount={pendingFriendRequestCount} />
     }
 
     if (activeTab === "training") {

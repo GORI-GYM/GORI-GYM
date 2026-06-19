@@ -2,7 +2,7 @@
 import { IconCastle, IconBag, IconBook, IconHelmet, IconTrophy, IconUsers } from "@/icons"
 import { useTranslation } from "react-i18next"
 
-type NavTab = "home" | "routine" | "training" | "character" | "social" | "achievements" | "auth"
+type NavTab = "home" | "routine" | "training" | "character" | "social" | "ranking" | "achievements" | "auth"
 
 interface BottomNavProps {
   activeTab?: NavTab
@@ -18,6 +18,7 @@ export default function BottomNav({ activeTab = "home", onTabChange, socialBadge
     { id: "training", icon: <IconBook className="w-6 h-6" />, label: t("nav.training") },
     { id: "character", icon: <IconHelmet className="w-6 h-6" />, label: t("nav.character") },
     { id: "social", icon: <IconUsers className="w-6 h-6" />, label: "SOCIAL" },
+    { id: "ranking", icon: <IconTrophy className="w-6 h-6" />, label: "RANKING" },
     { id: "achievements", icon: <IconTrophy className="w-6 h-6" />, label: t("nav.achievements") },
   ]
   return (

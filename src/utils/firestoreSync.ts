@@ -62,6 +62,20 @@ export interface FriendProfile extends PublicUserProfile {
   trainingEntries: TrainingEntry[]
 }
 
+export interface RankingUserProfile extends PublicUserProfile {
+  friends?: string[]
+}
+
+export interface RankingEntry {
+  uid: string
+  displayName: string
+  friendCode: string
+  level: number
+  totalVolume: number
+  trainingDays: number
+  rank: number
+}
+
 export interface TrainingLike {
   id: string
   uid: string
@@ -470,6 +484,127 @@ export async function getFriends(uid: string) {
   const friendIds = Array.isArray(userSnapshot.data()?.friends) ? userSnapshot.data()?.friends as string[] : []
   const profiles = await Promise.all(friendIds.map((friendUid) => getPublicUserProfile(friendUid)))
   return profiles.filter(Boolean) as PublicUserProfile[]
+}
+
+function getEntryDateKey(entry: TrainingEntry) {
+  if (entry.dateKey) {
+    return entry.dateKey
+  }
+
+  const now = new Date()
+  const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  switch (entry.dateLabel) {
+    case "today":
+      return baseDate.toISOString().slice(0, 10)
+    case "yesterday":
+      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 1).toISOString().slice(0, 10)
+    case "daysAgo":
+      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - (entry.daysAgo ?? 0)).toISOString().slice(0, 10)
+    case "weekAgo":
+      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 7).toISOString().slice(0, 10)
+  }
+}
+
+function getEntryVolume(entry: TrainingEntry) {
+  return entry.sets.reduce((entryTotal, set) => entryTotal + set.weight * (set.reps ?? 0), 0)
+}
+
+function isWithinCurrentMonth(entry: TrainingEntry, startKey: string, endKey: string) {
+  const dateKey = getEntryDateKey(entry)
+  return dateKey >= startKey && dateKey < endKey
+}
+
+function getCurrentMonthRange() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  return {
+    startKey: start.toISOString().slice(0, 10),
+    endKey: end.toISOString().slice(0, 10),
+  }
+}
+
+export async function getMonthlyRanking(friendOnlyForUid?: string) {
+  const usersSnapshot = await getDocs(collection(db, "users"))
+  const rankingProfiles = usersSnapshot.docs
+    .map((snapshot) => {
+      const data = snapshot.data() as FirestoreUserProfile
+      const friendCode = data.friendCode?.trim().toUpperCase()
+      if (!friendCode) {
+        return null
+      }
+
+      return {
+        uid: snapshot.id,
+        displayName: data.displayName || "GORU GYM USER",
+        level: data.level ?? 1,
+        xp: data.xp ?? 0,
+        trainingDays: data.trainingDays ?? 0,
+        friendCode,
+        friends: Array.isArray(data.friends) ? data.friends as string[] : [],
+      } satisfies RankingUserProfile
+    })
+    .filter(Boolean) as RankingUserProfile[]
+
+  const targetUids = friendOnlyForUid
+    ? new Set([friendOnlyForUid, ...(rankingProfiles.find((profile) => profile.uid === friendOnlyForUid)?.friends ?? [])])
+    : null
+
+  const filteredProfiles = targetUids
+    ? rankingProfiles.filter((profile) => targetUids.has(profile.uid))
+    : rankingProfiles
+
+  const { startKey, endKey } = getCurrentMonthRange()
+  const rankingEntries = await Promise.all(
+    filteredProfiles.map(async (profile) => {
+      const trainingSnapshot = await getDocs(getTrainingLogsCollectionRef(profile.uid))
+      const monthlyEntries = trainingSnapshot.docs
+        .map((snapshot) => snapshot.data() as TrainingEntry)
+        .filter((entry) => isWithinCurrentMonth(entry, startKey, endKey))
+
+      return {
+        uid: profile.uid,
+        displayName: profile.displayName,
+        friendCode: profile.friendCode,
+        level: profile.level,
+        totalVolume: monthlyEntries.reduce((sum, entry) => sum + getEntryVolume(entry), 0),
+        trainingDays: new Set(monthlyEntries.map((entry) => getEntryDateKey(entry))).size,
+        rank: 0,
+      } satisfies RankingEntry
+    }),
+  )
+
+  const sortAndRank = (entries: RankingEntry[], metric: "totalVolume" | "trainingDays") => {
+    let previousValue: number | null = null
+    let previousRank = 0
+
+    return [...entries]
+      .sort((left, right) => {
+        if (right[metric] !== left[metric]) {
+          return right[metric] - left[metric]
+        }
+        if (right.totalVolume !== left.totalVolume) {
+          return right.totalVolume - left.totalVolume
+        }
+        if (right.trainingDays !== left.trainingDays) {
+          return right.trainingDays - left.trainingDays
+        }
+        return left.displayName.localeCompare(right.displayName, "ja")
+      })
+      .map((entry, index) => {
+        const currentValue = entry[metric]
+        const rank = previousValue === currentValue ? previousRank : index + 1
+        previousValue = currentValue
+        previousRank = rank
+        return { ...entry, rank }
+      })
+    }
+
+  return {
+    overallVolume: sortAndRank(rankingEntries, "totalVolume"),
+    overallFrequency: sortAndRank(rankingEntries, "trainingDays"),
+  }
 }
 
 export async function getFriendProfile(friendUid: string) {

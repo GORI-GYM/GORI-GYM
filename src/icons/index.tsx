@@ -226,3 +226,26 @@ export function IconUsers({ className = "" }: { className?: string }) {
   )
 }
 
+export function IconCrown({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M4 18L6 7L12 12L18 7L20 18H4Z" fill="currentColor" opacity="0.2" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <circle cx="6" cy="7" r="1.5" fill="currentColor"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+      <circle cx="18" cy="7" r="1.5" fill="currentColor"/>
+      <path d="M4 18H20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+export function IconMedal({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M8 3H11L12 8H9L8 3Z" fill="currentColor" opacity="0.22" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M13 3H16L15 8H12L13 3Z" fill="currentColor" opacity="0.14" stroke="currentColor" strokeWidth="1.2"/>
+      <circle cx="12" cy="15" r="5" fill="currentColor" opacity="0.18" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M12 12.5L12.9 14.4L15 14.7L13.5 16.1L13.9 18.2L12 17.2L10.1 18.2L10.5 16.1L9 14.7L11.1 14.4L12 12.5Z" fill="currentColor"/>
+    </svg>
+  )
+}
+
