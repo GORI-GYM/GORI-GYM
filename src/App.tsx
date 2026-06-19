@@ -16,6 +16,7 @@ import RoutinePage from "@/sections/RoutinePage"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
+import { buildUserProfile, mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToUserTrainingData } from "@/utils/firestoreSync"
 import { initialRoutines, type Routine } from "@/sections/routineData"
 import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMRecords, calculateBig3Records, calculateBig3OneRMRecords, type BodyPartXPMap, calculateBodyPartXPMap, calculateTotalXP, getLevelFromXP, LEVEL_THRESHOLDS, MAX_LEVEL, XP_PER_LEVEL } from "@/sections/TrainingPage"
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
@@ -23,6 +24,8 @@ import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
 const THEME_STORAGE_KEY = "gym-quest-theme"
 const ROUTINES_STORAGE_KEY = "gym-quest-routines"
 const MONTHLY_CHARACTER_HISTORY_STORAGE_KEY = "gym-quest-monthly-character-history"
+const PROFILE_STORAGE_KEY = "gym-quest-profile"
+const TRAINING_ENTRIES_STORAGE_KEY = "gym-quest-training-entries"
 const SPLASH_SCREEN_DURATION_MS = 1800
 const APP_VERSION = "v1.0"
 
@@ -61,6 +64,46 @@ function getStoredRoutines(): Routine[] {
 
 function getStoredTheme(): ThemeMode {
   return getPreferredTheme()
+}
+
+function getStoredProfile() {
+  if (typeof window === "undefined") {
+    return { weight: 70, height: 175 }
+  }
+
+  const storedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
+  if (!storedProfile) {
+    return { weight: 70, height: 175 }
+  }
+
+  try {
+    const parsedProfile = JSON.parse(storedProfile)
+    if (typeof parsedProfile?.weight === "number" && typeof parsedProfile?.height === "number") {
+      return parsedProfile as { weight: number; height: number }
+    }
+  } catch {
+    return { weight: 70, height: 175 }
+  }
+
+  return { weight: 70, height: 175 }
+}
+
+function getStoredTrainingEntries() {
+  if (typeof window === "undefined") {
+    return sampleEntries
+  }
+
+  const storedEntries = window.localStorage.getItem(TRAINING_ENTRIES_STORAGE_KEY)
+  if (!storedEntries) {
+    return sampleEntries
+  }
+
+  try {
+    const parsedEntries = JSON.parse(storedEntries)
+    return Array.isArray(parsedEntries) ? parsedEntries as TrainingEntry[] : sampleEntries
+  } catch {
+    return sampleEntries
+  }
 }
 
 // Sample player data
@@ -267,8 +310,8 @@ function AppContent() {
   const [showSplashScreen, setShowSplashScreen] = useState(true)
   const [activeTab, setActiveTab] = useState<NavTab>("home")
   const [workoutActive, setWorkoutActive] = useState(false)
-  const [profile, setProfile] = useState({ weight: 70, height: 175 })
-  const [trainingEntries, setTrainingEntries] = useState<TrainingEntry[]>(sampleEntries)
+  const [profile, setProfile] = useState(getStoredProfile)
+  const [trainingEntries, setTrainingEntries] = useState<TrainingEntry[]>(getStoredTrainingEntries)
   const initialBig3Records = useMemo<Big3Records>(() => calculateBig3Records(sampleEntries), [])
   const initialBig3OneRMRecords = useMemo<Big3OneRMRecords>(() => calculateBig3OneRMRecords(sampleEntries), [])
   const initialXP = useMemo(() => calculateTotalXP(sampleEntries), [])
@@ -295,6 +338,9 @@ function AppContent() {
     [computedMonthlyHistory, storedMonthlyHistory],
   )
   const previousLevelRef = useRef(level)
+  const isApplyingRemoteSnapshotRef = useRef(false)
+  const lastSyncedTrainingEntriesRef = useRef<string>("")
+  const lastSyncedProfileRef = useRef<string>("")
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowSplashScreen(false), SPLASH_SCREEN_DURATION_MS)
@@ -309,6 +355,14 @@ function AppContent() {
   useEffect(() => {
     window.localStorage.setItem(SELECTED_CHARACTER_STORAGE_KEY, selectedCharacter)
   }, [selectedCharacter])
+
+  useEffect(() => {
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
+  }, [profile])
+
+  useEffect(() => {
+    window.localStorage.setItem(TRAINING_ENTRIES_STORAGE_KEY, JSON.stringify(trainingEntries))
+  }, [trainingEntries])
 
   useEffect(() => {
     window.localStorage.setItem(ROUTINES_STORAGE_KEY, JSON.stringify(routines))
@@ -342,6 +396,94 @@ function AppContent() {
     setXp(calculateTotalXP(trainingEntries))
     setBodyPartXP(calculateBodyPartXPMap(trainingEntries))
   }, [trainingEntries])
+
+  useEffect(() => {
+    if (!user) {
+      lastSyncedTrainingEntriesRef.current = ""
+      lastSyncedProfileRef.current = ""
+      return
+    }
+
+    let isMounted = true
+
+    const syncUserData = async () => {
+      const mergedData = await mergeLocalDataToFirestore(user, {
+        trainingEntries,
+        profile: buildUserProfile(user, xp, level, trainingEntries),
+      })
+
+      if (!isMounted) {
+        return
+      }
+
+      isApplyingRemoteSnapshotRef.current = true
+      setTrainingEntries(mergedData.trainingEntries)
+      lastSyncedTrainingEntriesRef.current = JSON.stringify(mergedData.trainingEntries)
+      lastSyncedProfileRef.current = JSON.stringify(mergedData.profile)
+      isApplyingRemoteSnapshotRef.current = false
+    }
+
+    void syncUserData()
+
+    const unsubscribe = subscribeToUserTrainingData(
+      user.uid,
+      ({ trainingEntries: nextEntries, profile: nextProfile }) => {
+        if (!isMounted) {
+          return
+        }
+
+        const serializedEntries = JSON.stringify(nextEntries)
+        const serializedProfile = JSON.stringify(nextProfile)
+        if (
+          serializedEntries === lastSyncedTrainingEntriesRef.current
+          && serializedProfile === lastSyncedProfileRef.current
+        ) {
+          return
+        }
+
+        isApplyingRemoteSnapshotRef.current = true
+        setTrainingEntries(nextEntries)
+        lastSyncedTrainingEntriesRef.current = serializedEntries
+        lastSyncedProfileRef.current = serializedProfile
+        isApplyingRemoteSnapshotRef.current = false
+      },
+      () => undefined,
+    )
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!user || isApplyingRemoteSnapshotRef.current) {
+      return
+    }
+
+    const serializedEntries = JSON.stringify(trainingEntries)
+    if (serializedEntries === lastSyncedTrainingEntriesRef.current) {
+      return
+    }
+
+    lastSyncedTrainingEntriesRef.current = serializedEntries
+    void saveTrainingEntries(user.uid, trainingEntries)
+  }, [trainingEntries, user])
+
+  useEffect(() => {
+    if (!user) {
+      return
+    }
+
+    const nextProfile = buildUserProfile(user, xp, level, trainingEntries)
+    const serializedProfile = JSON.stringify(nextProfile)
+    if (serializedProfile === lastSyncedProfileRef.current) {
+      return
+    }
+
+    lastSyncedProfileRef.current = serializedProfile
+    void saveUserProfile(user.uid, nextProfile)
+  }, [level, trainingEntries, user, xp])
 
   const handleReturnFromWorkout = () => {
     setWorkoutActive(false)
