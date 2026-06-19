@@ -2,7 +2,7 @@
 import { IconCastle, IconBag, IconBook, IconHelmet, IconTrophy } from "@/icons"
 import { useTranslation } from "react-i18next"
 
-type NavTab = "home" | "routine" | "training" | "character" | "achievements"
+type NavTab = "home" | "routine" | "training" | "character" | "achievements" | "auth"
 
 interface BottomNavProps {
   activeTab?: NavTab

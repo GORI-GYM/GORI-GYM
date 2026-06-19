@@ -7,11 +7,13 @@ import XPBar from "@/sections/XPBar"
 import WorkoutLog from "@/sections/WorkoutLog"
 import StatusPanel from "@/sections/StatusPanel"
 import BottomNav from "@/sections/BottomNav"
+import AuthPage from "@/sections/AuthPage"
 import CharacterPage from "@/sections/CharacterPage"
 import TrainingPage from "@/sections/TrainingPage"
 import WorkoutPage from "@/sections/WorkoutPage"
 import AchievementsPage from "@/sections/AchievementsPage"
 import RoutinePage from "@/sections/RoutinePage"
+import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
 import { initialRoutines, type Routine } from "@/sections/routineData"
@@ -83,7 +85,7 @@ const PLAYER = {
   motivationMessage: "Every rep is a step toward greatness.",
 }
 
-type NavTab = "home" | "routine" | "training" | "character" | "achievements"
+type NavTab = "home" | "routine" | "training" | "character" | "achievements" | "auth"
 
 interface HomeTrainingSummary {
   date: string
@@ -258,8 +260,9 @@ function getMergedMonthlyCharacterHistory(
   return Array.from(mergedMap.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey))
 }
 
-export default function App() {
+function AppContent() {
   const { t } = useTranslation()
+  const { user, logout } = useAuth()
   const [theme, setTheme] = useState<ThemeMode>(getPreferredTheme)
   const [showSplashScreen, setShowSplashScreen] = useState(true)
   const [activeTab, setActiveTab] = useState<NavTab>("home")
@@ -418,6 +421,10 @@ export default function App() {
       return <AchievementsPage trainingEntries={trainingEntries} big3Records={big3Records} />
     }
 
+    if (activeTab === "auth") {
+      return <AuthPage />
+    }
+
     return (
       <>
         <AvatarSection
@@ -468,7 +475,18 @@ export default function App() {
       <div
         className="relative flex min-h-screen w-full max-w-[430px] flex-col bg-[var(--color-bg)] shadow-[0_24px_60px_rgba(17,17,17,0.12)] transition-colors duration-200 dark:bg-[var(--color-dark-bg)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
       >
-        <TopBar theme={theme} onThemeToggle={toggleTheme} />
+        <TopBar
+          theme={theme}
+          onThemeToggle={toggleTheme}
+          authActionLabel={user ? "ログアウト" : "ログイン"}
+          onAuthAction={() => {
+            if (user) {
+              void logout()
+              return
+            }
+            setActiveTab("auth")
+          }}
+        />
 
         <main className="flex-1 overflow-y-auto pb-24" id="main-content">
           {renderMainContent()}
@@ -714,6 +732,14 @@ export default function App() {
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

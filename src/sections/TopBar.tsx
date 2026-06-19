@@ -6,6 +6,8 @@ interface TopBarProps {
   onMenuClick?: () => void
   theme: "light" | "dark"
   onThemeToggle: () => void
+  authActionLabel: string
+  onAuthAction: () => void
 }
 
 function SunIcon({ className }: { className?: string }) {
@@ -25,7 +27,7 @@ function MoonIcon({ className }: { className?: string }) {
   )
 }
 
-export default function TopBar({ onMenuClick, theme, onThemeToggle }: TopBarProps) {
+export default function TopBar({ onMenuClick, theme, onThemeToggle, authActionLabel, onAuthAction }: TopBarProps) {
   const { t, i18n } = useTranslation()
   const nextLanguage = i18n.language === "ja" ? "en" : "ja"
   const isDark = theme === "dark"
@@ -55,6 +57,13 @@ export default function TopBar({ onMenuClick, theme, onThemeToggle }: TopBarProp
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onAuthAction}
+          className="rounded-2xl border border-[#F5A623]/35 bg-[#FFF8E7] px-3 py-2 text-[0.68rem] font-black tracking-[0.14em] text-[#8A5A00] shadow-[0_10px_24px_rgba(245,166,35,0.16)] transition hover:bg-[#F5A623] hover:text-[#0a0a0a] dark:bg-[#171717] dark:text-[#FFD27A] dark:hover:bg-[#F5A623] dark:hover:text-[#0a0a0a]"
+        >
+          {authActionLabel}
+        </button>
         <button
           type="button"
           onClick={onThemeToggle}
