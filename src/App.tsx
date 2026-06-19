@@ -9,6 +9,7 @@ import StatusPanel from "@/sections/StatusPanel"
 import BottomNav from "@/sections/BottomNav"
 import AuthPage from "@/sections/AuthPage"
 import CharacterPage from "@/sections/CharacterPage"
+import ProfilePage from "@/sections/ProfilePage"
 import TrainingPage from "@/sections/TrainingPage"
 import WorkoutPage from "@/sections/WorkoutPage"
 import AchievementsPage from "@/sections/AchievementsPage"
@@ -16,7 +17,7 @@ import RoutinePage from "@/sections/RoutinePage"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { getCharacterGrowthImage, type CharacterId } from "@/assets/characters"
 import { SELECTED_CHARACTER_STORAGE_KEY } from "@/utils/characterSelection"
-import { buildUserProfile, mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToUserTrainingData } from "@/utils/firestoreSync"
+import { mergeLocalDataToFirestore, saveTrainingEntries, saveUserProfile, subscribeToUserTrainingData, type UserProfile } from "@/utils/firestoreSync"
 import { initialRoutines, type Routine } from "@/sections/routineData"
 import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMRecords, calculateBig3Records, calculateBig3OneRMRecords, type BodyPartXPMap, calculateBodyPartXPMap, calculateTotalXP, getLevelFromXP, LEVEL_THRESHOLDS, MAX_LEVEL, XP_PER_LEVEL } from "@/sections/TrainingPage"
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
@@ -106,6 +107,21 @@ function getStoredTrainingEntries() {
   }
 }
 
+function getTrainingDaysCount(entries: TrainingEntry[]) {
+  return new Set(
+    entries.map((entry) => entry.dateKey ?? `${entry.dateLabel}-${entry.daysAgo ?? 0}`),
+  ).size
+}
+
+function createLocalUserProfile(displayName: string | null | undefined, xp: number, level: number, trainingEntries: TrainingEntry[]): UserProfile {
+  return {
+    displayName: displayName?.trim() || "GORU GYM USER",
+    level,
+    xp,
+    trainingDays: getTrainingDaysCount(trainingEntries),
+  }
+}
+
 // Sample player data
 const PLAYER = {
   name: "WARRIOR",
@@ -128,7 +144,7 @@ const PLAYER = {
   motivationMessage: "Every rep is a step toward greatness.",
 }
 
-type NavTab = "home" | "routine" | "training" | "character" | "achievements" | "auth"
+type NavTab = "home" | "routine" | "training" | "character" | "social" | "achievements" | "auth"
 
 interface HomeTrainingSummary {
   date: string
@@ -320,6 +336,7 @@ function AppContent() {
   const [big3OneRMRecords, setBig3OneRMRecords] = useState<Big3OneRMRecords>(initialBig3OneRMRecords)
   const [xp, setXp] = useState(initialXP)
   const [bodyPartXP, setBodyPartXP] = useState<BodyPartXPMap>(initialBodyPartXP)
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => createLocalUserProfile(user?.displayName, initialXP, getLevelFromXP(initialXP), getStoredTrainingEntries()))
   const [routines, setRoutines] = useState<Routine[]>(getStoredRoutines)
   const [pendingStartRoutine, setPendingStartRoutine] = useState<Routine | null>(null)
   const [selectedTrainingDateKey, setSelectedTrainingDateKey] = useState<string | null>(null)
@@ -399,6 +416,26 @@ function AppContent() {
 
   useEffect(() => {
     if (!user) {
+      setUserProfile((current) => ({
+        ...current,
+        level,
+        xp,
+        trainingDays: getTrainingDaysCount(trainingEntries),
+      }))
+      return
+    }
+
+    setUserProfile((current) => ({
+      ...current,
+      displayName: current.displayName || user.displayName?.trim() || "GORU GYM USER",
+      level,
+      xp,
+      trainingDays: getTrainingDaysCount(trainingEntries),
+    }))
+  }, [level, trainingEntries, user, xp])
+
+  useEffect(() => {
+    if (!user) {
       lastSyncedTrainingEntriesRef.current = ""
       lastSyncedProfileRef.current = ""
       return
@@ -409,7 +446,7 @@ function AppContent() {
     const syncUserData = async () => {
       const mergedData = await mergeLocalDataToFirestore(user, {
         trainingEntries,
-        profile: buildUserProfile(user, xp, level, trainingEntries),
+        profile: userProfile,
       })
 
       if (!isMounted) {
@@ -420,41 +457,37 @@ function AppContent() {
       setTrainingEntries(mergedData.trainingEntries)
       lastSyncedTrainingEntriesRef.current = JSON.stringify(mergedData.trainingEntries)
       lastSyncedProfileRef.current = JSON.stringify(mergedData.profile)
-      isApplyingRemoteSnapshotRef.current = false
+      setUserProfile((current) => ({ ...current, ...mergedData.profile }))
+      window.setTimeout(() => {
+        isApplyingRemoteSnapshotRef.current = false
+      }, 0)
     }
 
     void syncUserData()
 
     const unsubscribe = subscribeToUserTrainingData(
       user.uid,
-      ({ trainingEntries: nextEntries, profile: nextProfile }) => {
+      (payload) => {
         if (!isMounted) {
           return
         }
 
-        const serializedEntries = JSON.stringify(nextEntries)
-        const serializedProfile = JSON.stringify(nextProfile)
-        if (
-          serializedEntries === lastSyncedTrainingEntriesRef.current
-          && serializedProfile === lastSyncedProfileRef.current
-        ) {
-          return
-        }
-
         isApplyingRemoteSnapshotRef.current = true
-        setTrainingEntries(nextEntries)
-        lastSyncedTrainingEntriesRef.current = serializedEntries
-        lastSyncedProfileRef.current = serializedProfile
-        isApplyingRemoteSnapshotRef.current = false
+        setTrainingEntries(payload.trainingEntries)
+        lastSyncedTrainingEntriesRef.current = JSON.stringify(payload.trainingEntries)
+        lastSyncedProfileRef.current = JSON.stringify(payload.profile)
+        setUserProfile((current) => ({ ...current, ...payload.profile }))
+        window.setTimeout(() => {
+          isApplyingRemoteSnapshotRef.current = false
+        }, 0)
       },
-      () => undefined,
     )
 
     return () => {
       isMounted = false
       unsubscribe()
     }
-  }, [user])
+  }, [trainingEntries, user, userProfile])
 
   useEffect(() => {
     if (!user || isApplyingRemoteSnapshotRef.current) {
@@ -475,7 +508,13 @@ function AppContent() {
       return
     }
 
-    const nextProfile = buildUserProfile(user, xp, level, trainingEntries)
+    const nextProfile = {
+      ...userProfile,
+      displayName: userProfile.displayName || user.displayName?.trim() || "GORU GYM USER",
+      level,
+      xp,
+      trainingDays: getTrainingDaysCount(trainingEntries),
+    }
     const serializedProfile = JSON.stringify(nextProfile)
     if (serializedProfile === lastSyncedProfileRef.current) {
       return
@@ -537,6 +576,10 @@ function AppContent() {
           onBackupImportComplete={handleBackupImportComplete}
         />
       )
+    }
+
+    if (activeTab === "social") {
+      return <ProfilePage profile={userProfile} onProfileChange={setUserProfile} />
     }
 
     if (activeTab === "training") {

@@ -215,3 +215,14 @@ export function IconSparkGym({ className = "" }: { className?: string }) {
   )
 }
 
+export function IconUsers({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="9" cy="8" r="3" fill="currentColor" opacity="0.2" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="17" cy="10" r="2.5" fill="currentColor" opacity="0.16" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M4 18C4 15.7909 5.79086 14 8 14H10C12.2091 14 14 15.7909 14 18V19H4V18Z" fill="currentColor" opacity="0.18" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M14 19V18C14 16.3431 15.3431 15 17 15H18C19.6569 15 21 16.3431 21 18V19" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  )
+}
+

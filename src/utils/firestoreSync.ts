@@ -1,11 +1,17 @@
 import {
   collection,
   doc,
+  getCountFromServer,
   getDoc,
   getDocs,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
   serverTimestamp,
   setDoc,
+  startAt,
+  endAt,
   writeBatch,
   type FirestoreError,
   type Unsubscribe,
@@ -19,6 +25,7 @@ export interface UserProfile {
   level: number
   xp: number
   trainingDays: number
+  friendCode?: string
 }
 
 interface FirestoreTrainingLog extends TrainingEntry {
@@ -27,6 +34,15 @@ interface FirestoreTrainingLog extends TrainingEntry {
 
 interface FirestoreUserProfile extends UserProfile {
   updatedAt?: unknown
+}
+
+export interface PublicUserProfile {
+  uid: string
+  displayName: string
+  level: number
+  xp: number
+  trainingDays: number
+  friendCode: string
 }
 
 export interface SyncPayload {
@@ -218,4 +234,102 @@ export async function saveTrainingEntries(uid: string, entries: TrainingEntry[])
   })
 
   await batch.commit()
+}
+
+function generateFriendCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("")
+}
+
+async function isFriendCodeAvailable(friendCode: string) {
+  const snapshot = await getCountFromServer(
+    query(collection(db, "users"), orderBy("friendCode"), startAt(friendCode), endAt(friendCode)),
+  )
+  return snapshot.data().count === 0
+}
+
+export async function ensureUserFriendCode(uid: string) {
+  const userDocRef = getUserDocRef(uid)
+  const snapshot = await getDoc(userDocRef)
+  const existingCode = snapshot.data()?.friendCode
+
+  if (typeof existingCode === "string" && existingCode.trim().length > 0) {
+    return existingCode.trim().toUpperCase()
+  }
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const nextCode = generateFriendCode()
+    const available = await isFriendCodeAvailable(nextCode)
+
+    if (!available) {
+      continue
+    }
+
+    await setDoc(userDocRef, { friendCode: nextCode, updatedAt: serverTimestamp() }, { merge: true })
+    return nextCode
+  }
+
+  throw new Error("フレンドコードの生成に失敗しました。時間をおいて再度お試しください。")
+}
+
+function normalizePublicUserProfile(uid: string, data: FirestoreUserProfile | undefined): PublicUserProfile | null {
+  const friendCode = data?.friendCode?.trim().toUpperCase()
+
+  if (!friendCode) {
+    return null
+  }
+
+  return {
+    uid,
+    displayName: data?.displayName || "GORU GYM USER",
+    level: data?.level ?? 1,
+    xp: data?.xp ?? 0,
+    trainingDays: data?.trainingDays ?? 0,
+    friendCode,
+  }
+}
+
+export async function searchUsers(searchTerm: string, currentUid?: string) {
+  const normalizedTerm = searchTerm.trim()
+
+  if (!normalizedTerm) {
+    return [] as PublicUserProfile[]
+  }
+
+  const normalizedCode = normalizedTerm.toUpperCase()
+  const usersRef = collection(db, "users")
+  const snapshots = await Promise.all([
+    getDocs(query(usersRef, orderBy("friendCode"), startAt(normalizedCode), endAt(normalizedCode), limit(10))),
+    getDocs(query(usersRef, orderBy("displayName"), startAt(normalizedTerm), endAt(`${normalizedTerm}\uf8ff`), limit(10))),
+  ])
+
+  const mergedUsers = new Map<string, PublicUserProfile>()
+
+  snapshots.forEach((snapshot) => {
+    snapshot.docs.forEach((docSnapshot) => {
+      if (docSnapshot.id === currentUid) {
+        return
+      }
+
+      const normalizedProfile = normalizePublicUserProfile(docSnapshot.id, docSnapshot.data() as FirestoreUserProfile)
+
+      if (!normalizedProfile) {
+        return
+      }
+
+      mergedUsers.set(docSnapshot.id, normalizedProfile)
+    })
+  })
+
+  return Array.from(mergedUsers.values()).sort((left, right) => {
+    if (left.friendCode === normalizedCode && right.friendCode !== normalizedCode) {
+      return -1
+    }
+
+    if (right.friendCode === normalizedCode && left.friendCode !== normalizedCode) {
+      return 1
+    }
+
+    return left.displayName.localeCompare(right.displayName, "ja")
+  })
 }

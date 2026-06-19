@@ -1,8 +1,8 @@
 ﻿// BottomNav 窶・RPG-style bottom navigation bar
-import { IconCastle, IconBag, IconBook, IconHelmet, IconTrophy } from "@/icons"
+import { IconCastle, IconBag, IconBook, IconHelmet, IconTrophy, IconUsers } from "@/icons"
 import { useTranslation } from "react-i18next"
 
-type NavTab = "home" | "routine" | "training" | "character" | "achievements" | "auth"
+type NavTab = "home" | "routine" | "training" | "character" | "social" | "achievements" | "auth"
 
 interface BottomNavProps {
   activeTab?: NavTab
@@ -16,6 +16,7 @@ export default function BottomNav({ activeTab = "home", onTabChange }: BottomNav
     { id: "routine", icon: <IconBag className="w-6 h-6" />, label: t("nav.routine") },
     { id: "training", icon: <IconBook className="w-6 h-6" />, label: t("nav.training") },
     { id: "character", icon: <IconHelmet className="w-6 h-6" />, label: t("nav.character") },
+    { id: "social", icon: <IconUsers className="w-6 h-6" />, label: "SOCIAL" },
     { id: "achievements", icon: <IconTrophy className="w-6 h-6" />, label: t("nav.achievements") },
   ]
   return (
