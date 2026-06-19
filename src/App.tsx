@@ -24,6 +24,25 @@ import { sampleEntries, type TrainingEntry, type Big3Records, type Big3OneRMReco
 import gorillaLv3Image from "@/assets/characters/gorilla_lv3.png"
 import { applyTrainingCompletion, calculateWeeklyProgressSummary, getStoredWeeklyProgressState, loadWeeklyProgressFromFirestore, persistWeeklyProgressState, resolveWeeklyProgress, saveWeeklyProgressToFirestore, type WeeklyProgressState } from "@/utils/weeklyProgress"
 import { calculateMonthlyCharacterProgressSummary, getStoredMonthlyCharacterProgressState, getMonthlyCharacterHistory, loadMonthlyCharacterProgressFromFirestore, persistMonthlyCharacterProgressState, resolveMonthlyCharacterProgress, saveMonthlyCharacterProgressToFirestore, type MonthlyCharacterProgressState } from "@/utils/monthlyCharacterProgress"
+import DailyMissionSection from "@/sections/DailyMissionSection"
+import {
+  buildMissionHistoryEntry,
+  completeDailyMission,
+  generateDailyMissionDay,
+  getDefaultDailyMissionSettings,
+  getStoredDailyMissionDay,
+  getStoredDailyMissionHistory,
+  getStoredDailyMissionSettings,
+  loadDailyMissionFromFirestore,
+  persistDailyMissionDay,
+  persistDailyMissionHistory,
+  persistDailyMissionSettings,
+  resolveDailyMissionState,
+  saveDailyMissionToFirestore,
+  type DailyMissionDay,
+  type DailyMissionHistoryEntry,
+  type DailyMissionSettings,
+} from "@/utils/dailyMission"
 
 const THEME_STORAGE_KEY = "gym-quest-theme"
 const ROUTINES_STORAGE_KEY = "gym-quest-routines"
@@ -282,6 +301,9 @@ function AppContent() {
   const [pendingFriendRequestCount, setPendingFriendRequestCount] = useState(0)
   const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgressState>(getStoredWeeklyProgressState)
   const [monthlyCharacterProgress, setMonthlyCharacterProgress] = useState<MonthlyCharacterProgressState>(getStoredMonthlyCharacterProgressState)
+  const [dailyMissionSettings, setDailyMissionSettings] = useState<DailyMissionSettings>(getStoredDailyMissionSettings)
+  const [dailyMissionDay, setDailyMissionDay] = useState<DailyMissionDay>(getStoredDailyMissionDay)
+  const [dailyMissionHistory, setDailyMissionHistory] = useState<DailyMissionHistoryEntry[]>(getStoredDailyMissionHistory)
   const [showWeeklyGoalModal, setShowWeeklyGoalModal] = useState(false)
   const level = useMemo(() => getLevelFromXP(xp), [xp])
   const nextLevelXp = useMemo(() => getNextLevelXp(level), [level])
@@ -298,6 +320,10 @@ function AppContent() {
   )
   const resolvedWeeklyProgress = useMemo(() => resolveWeeklyProgress(trainingEntries, weeklyProgress), [trainingEntries, weeklyProgress])
   const weeklyProgressSummary = useMemo(() => calculateWeeklyProgressSummary(trainingEntries, resolvedWeeklyProgress), [resolvedWeeklyProgress, trainingEntries])
+  const resolvedDailyMissionState = useMemo(
+    () => resolveDailyMissionState(dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings),
+    [dailyMissionDay, dailyMissionHistory, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings],
+  )
   const previousLevelRef = useRef(level)
   const isApplyingRemoteSnapshotRef = useRef(false)
   const lastSyncedTrainingEntriesRef = useRef<string>("")
@@ -344,6 +370,21 @@ function AppContent() {
   }, [resolvedMonthlyCharacterProgress, monthlyCharacterProgress])
 
   useEffect(() => {
+    persistDailyMissionSettings(dailyMissionSettings)
+  }, [dailyMissionSettings])
+
+  useEffect(() => {
+    persistDailyMissionDay(resolvedDailyMissionState.currentDay)
+    persistDailyMissionHistory(resolvedDailyMissionState.history)
+    if (JSON.stringify(resolvedDailyMissionState.currentDay) !== JSON.stringify(dailyMissionDay)) {
+      setDailyMissionDay(resolvedDailyMissionState.currentDay)
+    }
+    if (JSON.stringify(resolvedDailyMissionState.history) !== JSON.stringify(dailyMissionHistory)) {
+      setDailyMissionHistory(resolvedDailyMissionState.history)
+    }
+  }, [resolvedDailyMissionState, dailyMissionDay, dailyMissionHistory])
+
+  useEffect(() => {
     const nextHistory = buildMonthlyCharacterHistoryRecord(computedMonthlyHistory)
     setStoredMonthlyHistory((currentHistory) => {
       const mergedHistory = { ...currentHistory, ...nextHistory }
@@ -373,6 +414,13 @@ function AppContent() {
 
     return subscribeToPendingFriendRequestCount(user.uid, setPendingFriendRequestCount)
   }, [user])
+
+  useEffect(() => {
+    if (resolvedDailyMissionState.currentDay.missions.length > 0 || resolvedDailyMissionState.currentDay.isRestDay) {
+      return
+    }
+    setDailyMissionDay(generateDailyMissionDay(trainingEntries, resolvedWeeklyProgress, dailyMissionSettings))
+  }, [resolvedDailyMissionState.currentDay, trainingEntries, resolvedWeeklyProgress, dailyMissionSettings])
 
   useEffect(() => {
     setBig3Records(calculateBig3Records(trainingEntries))
@@ -413,11 +461,18 @@ function AppContent() {
     const syncUserData = async () => {
       const remoteWeeklyProgress = await loadWeeklyProgressFromFirestore(user)
       const remoteMonthlyCharacterProgress = await loadMonthlyCharacterProgressFromFirestore(user)
+      const remoteDailyMission = await loadDailyMissionFromFirestore(user)
       if (remoteWeeklyProgress) {
         setWeeklyProgress(remoteWeeklyProgress)
       }
       if (remoteMonthlyCharacterProgress) {
         setMonthlyCharacterProgress(remoteMonthlyCharacterProgress)
+      }
+
+      if (remoteDailyMission) {
+        setDailyMissionDay(remoteDailyMission.currentDay)
+        setDailyMissionHistory(remoteDailyMission.history)
+        setDailyMissionSettings(remoteDailyMission.settings ?? getDefaultDailyMissionSettings())
       }
       const mergedData = await mergeLocalDataToFirestore(user, {
         trainingEntries,
@@ -527,7 +582,12 @@ function AppContent() {
     void saveUserProfile(user.uid, nextProfile)
     void saveWeeklyProgressToFirestore(user, resolvedWeeklyProgress)
     void saveMonthlyCharacterProgressToFirestore(user, resolvedMonthlyCharacterProgress)
-  }, [level, resolvedMonthlyCharacterProgress, resolvedWeeklyProgress, trainingEntries, user, userProfile, xp])
+    void saveDailyMissionToFirestore(user, {
+      currentDay: resolvedDailyMissionState.currentDay,
+      history: resolvedDailyMissionState.history,
+      settings: dailyMissionSettings,
+    })
+  }, [dailyMissionSettings, level, resolvedDailyMissionState, resolvedMonthlyCharacterProgress, resolvedWeeklyProgress, trainingEntries, user, userProfile, xp])
 
   const handleTrainingSaved = (targetDateKey: string) => {
     const result = applyTrainingCompletion(trainingEntries, resolvedWeeklyProgress, targetDateKey)
@@ -551,6 +611,28 @@ function AppContent() {
 
   const toggleTheme = () => {
     setTheme((currentTheme) => currentTheme === "dark" ? "light" : "dark")
+  }
+
+  const handleCompleteDailyMission = (missionId: string) => {
+    const result = completeDailyMission(
+      resolvedDailyMissionState.currentDay,
+      missionId,
+      resolvedWeeklyProgress,
+      resolvedMonthlyCharacterProgress,
+    )
+
+    setDailyMissionDay(result.nextDay)
+    setDailyMissionHistory((currentHistory) => {
+      const nextEntry = buildMissionHistoryEntry(result.nextDay)
+      return [nextEntry, ...currentHistory.filter((entry) => entry.dateKey !== nextEntry.dateKey)].slice(0, 7)
+    })
+    setWeeklyProgress(result.nextWeeklyProgress)
+    setMonthlyCharacterProgress(result.nextMonthlyProgress)
+  }
+
+  const handleSaveDailyMissionSettings = (settings: DailyMissionSettings) => {
+    setDailyMissionSettings(settings)
+    setDailyMissionDay(generateDailyMissionDay(trainingEntries, resolvedWeeklyProgress, settings))
   }
 
   const handleBackupImportComplete = () => {
@@ -644,6 +726,13 @@ function AppContent() {
 
     return (
       <>
+        <DailyMissionSection
+          day={resolvedDailyMissionState.currentDay}
+          history={resolvedDailyMissionState.history}
+          settings={dailyMissionSettings}
+          onCompleteMission={handleCompleteDailyMission}
+          onSaveSettings={handleSaveDailyMissionSettings}
+        />
         <AvatarSection
           level={level}
           characterName={PLAYER.name}

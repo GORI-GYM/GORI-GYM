@@ -43,6 +43,9 @@ export interface UserProfile {
   weeklyXP?: number
   streakFreezeAvailable?: boolean
   weekStartDate?: string
+  dailyMissionCurrentDay?: unknown
+  dailyMissionHistory?: unknown
+  dailyMissionSettings?: unknown
 }
 
 interface FirestoreTrainingLog extends TrainingEntry {
