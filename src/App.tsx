@@ -751,6 +751,7 @@ function AppContent() {
       return (
         <RoutinePage
           routines={routines}
+          trainingEntries={trainingEntries}
           onRoutinesChange={setRoutines}
           onStartRoutine={(routine) => {
             setPendingStartRoutine(routine)

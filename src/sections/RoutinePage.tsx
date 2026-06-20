@@ -3,10 +3,12 @@ import { AnimatePresence, Reorder, motion } from "framer-motion"
 import { IconChevronRight, IconPlus } from "@/icons"
 import EmptyState from "@/components/EmptyState"
 import { useTranslation } from "react-i18next"
-import { createExercise, exerciseOptions, flatExerciseOptions, getExerciseWeightStep, routineBodyParts, type Routine, type RoutineBodyPart } from "@/sections/routineData"
+import { convertRecommendedPlanToRoutines, createExercise, exerciseOptions, flatExerciseOptions, generateRecommendedWeeklyPlan, getExerciseWeightStep, inferRecommendedTrainingLevel, routineBodyParts, type RecommendedWeeklyPlan, type Routine, type RoutineBodyPart } from "@/sections/routineData"
+import type { TrainingEntry } from "@/sections/TrainingPage"
 
 interface RoutinePageProps {
   routines: Routine[]
+  trainingEntries: TrainingEntry[]
   onRoutinesChange: React.Dispatch<React.SetStateAction<Routine[]>>
   onStartRoutine: (routine: Routine) => void
 }
@@ -20,13 +22,15 @@ const bodyPartAccent: Record<RoutineBodyPart, { bg: string; text: string; border
   LEGS: { bg: "#F1F5F9", text: "#334155", border: "#CBD5E1" },
 }
 
-export default function RoutinePage({ routines, onRoutinesChange, onStartRoutine }: RoutinePageProps) {
+export default function RoutinePage({ routines, trainingEntries, onRoutinesChange, onStartRoutine }: RoutinePageProps) {
   const { t } = useTranslation()
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [expandedExercisePanels, setExpandedExercisePanels] = useState<Record<string, string | null>>({})
   const [exercisePickerOpen, setExercisePickerOpen] = useState<Record<string, boolean>>({})
   const [exerciseSearch, setExerciseSearch] = useState<Record<string, string>>({})
+  const [recommendedPlan, setRecommendedPlan] = useState<RecommendedWeeklyPlan | null>(null)
+  const [recommendedSaved, setRecommendedSaved] = useState(false)
 
   const editingRoutine = useMemo(
     () => routines.find((routine) => routine.id === editingRoutineId) ?? null,
@@ -162,6 +166,35 @@ export default function RoutinePage({ routines, onRoutinesChange, onStartRoutine
       .filter((group) => group.translatedExercises.length > 0)
   }
 
+  const trainingDays = useMemo(
+    () => new Set(trainingEntries.map((entry) => entry.dateKey ?? `${entry.dateLabel}-${entry.daysAgo ?? 0}`)).size,
+    [trainingEntries],
+  )
+
+  const inferredLevel = useMemo(() => inferRecommendedTrainingLevel(trainingDays), [trainingDays])
+
+  const handleGenerateRecommendedPlan = () => {
+    setRecommendedPlan(generateRecommendedWeeklyPlan(trainingDays))
+    setRecommendedSaved(false)
+  }
+
+  const handleSaveRecommendedPlan = () => {
+    if (!recommendedPlan) return
+    const generatedRoutines = convertRecommendedPlanToRoutines(recommendedPlan)
+    onRoutinesChange((current) => [...generatedRoutines, ...current])
+    setRecommendedSaved(true)
+  }
+
+  const handleSaveAndStartRecommendedPlan = () => {
+    if (!recommendedPlan) return
+    const generatedRoutines = convertRecommendedPlanToRoutines(recommendedPlan)
+    onRoutinesChange((current) => [...generatedRoutines, ...current])
+    setRecommendedSaved(true)
+    if (generatedRoutines[0]) {
+      onStartRoutine(generatedRoutines[0])
+    }
+  }
+
   return (
     <section className="min-h-full bg-[#FFFBEA] px-4 pt-4 pb-28 text-[#1E293B] transition-colors duration-200 dark:bg-[#0B0B0B] dark:text-[#F8FAFC]">
       <motion.div
@@ -179,6 +212,120 @@ export default function RoutinePage({ routines, onRoutinesChange, onStartRoutine
             </p>
           </div>
         </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="mb-5 overflow-hidden rounded-[28px] bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)] ring-1 ring-[#E2E8F0] dark:bg-[#171717] dark:ring-[#D4A900]/20"
+      >
+        <div className="bg-gradient-to-r from-[#FFF8D6] via-[#FFFBEA] to-white px-5 py-5 dark:from-[#1F1A00] dark:via-[#171717] dark:to-[#171717]">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#D4A900]/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A900]">
+              AUTO PLAN
+            </span>
+            <span className="text-xs font-medium text-[#64748B] dark:text-[#CBD5E1]">
+              {t(`routine.recommended.levels.${inferredLevel}`)} ・ {trainingDays} {t("routine.recommended.trainingDays")}
+            </span>
+          </div>
+          <h2 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">{t("routine.recommended.title")}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[#64748B] dark:text-[#CBD5E1]">
+            {t("routine.recommended.description")}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleGenerateRecommendedPlan}
+              className="rounded-2xl bg-[#D4A900] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#B8860B]"
+            >
+              {recommendedPlan ? t("routine.recommended.regenerate") : t("routine.recommended.generate")}
+            </button>
+            {recommendedPlan ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSaveRecommendedPlan}
+                  className="rounded-2xl border border-[#BFDBFE] bg-white px-4 py-3 text-sm font-semibold text-[#D4A900] transition hover:bg-[#FFF8D6]"
+                >
+                  {t("routine.recommended.savePlan")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAndStartRecommendedPlan}
+                  className="rounded-2xl border border-[#D4A900] bg-[#FFF8D6] px-4 py-3 text-sm font-semibold text-[#8A6500] transition hover:bg-[#FFF1A8]"
+                >
+                  {t("routine.recommended.saveAndStart")}
+                </button>
+              </>
+            ) : null}
+          </div>
+          {recommendedSaved ? (
+            <div className="mt-4 rounded-2xl border border-[#D4A900]/20 bg-[#FFF8D6] px-4 py-3 text-sm font-semibold text-[#8A6500]">
+              {t("routine.recommended.savedNotice")}
+            </div>
+          ) : null}
+        </div>
+
+        {recommendedPlan ? (
+          <div className="border-t border-[#E2E8F0] px-5 py-5 dark:border-[#262626]">
+            <div className="rounded-2xl bg-[#F8FAFC] p-4 ring-1 ring-[#E2E8F0] dark:bg-[#111111] dark:ring-[#D4A900]/20">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A900]">
+                    {t("routine.recommended.weeklyPlan")}
+                  </div>
+                  <div className="mt-1 text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                    {t(`routine.recommended.levels.${recommendedPlan.level}`)} ・ {t("routine.recommended.sessionsPerWeek", { count: recommendedPlan.sessionsPerWeek })}
+                  </div>
+                </div>
+                <div className="rounded-full bg-[#FFF8D6] px-3 py-2 text-xs font-semibold text-[#8A6500]">
+                  {t("routine.recommended.autoDetected")}
+                </div>
+              </div>
+              <p className="mt-3 text-sm font-medium leading-7 text-[#475569] dark:text-[#CBD5E1]">
+                {recommendedPlan.summary}
+              </p>
+              <div className="mt-4 space-y-3">
+                {recommendedPlan.days.map((day) => (
+                  <div key={day.id} className="rounded-2xl border border-[#E2E8F0] bg-white p-4 dark:border-[#262626] dark:bg-[#171717]">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">{day.label}</div>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {day.focus.map((part) => (
+                            <span
+                              key={`${day.id}-${part}`}
+                              className="rounded-full border px-3 py-1 text-[11px] font-semibold"
+                              style={{ background: bodyPartAccent[part].bg, color: bodyPartAccent[part].text, borderColor: bodyPartAccent[part].border }}
+                            >
+                              {t(`training.${part.toLowerCase()}`)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-xs font-medium text-[#64748B] dark:text-[#CBD5E1]">
+                        {day.exercises.length} {t("common.exercises")}
+                      </div>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {day.exercises.map((exercise) => (
+                        <div key={exercise.id} className="flex items-center justify-between gap-3 rounded-2xl bg-[#F8FAFC] px-3 py-3 dark:bg-[#111111]">
+                          <div className="text-sm font-semibold text-[#1E293B] dark:text-[#F8FAFC]">
+                            {getExerciseName(exercise.nameKey)}
+                          </div>
+                          <div className="text-xs font-medium text-[#64748B] dark:text-[#CBD5E1]">
+                            {formatExerciseMeta(exercise.sets, exercise.targetReps, exercise.targetWeight)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </motion.div>
 
       <div className="space-y-4">

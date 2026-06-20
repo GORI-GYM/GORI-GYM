@@ -31,6 +31,22 @@ export interface Routine {
   exercises: RoutineExercise[]
 }
 
+export type RecommendedTrainingLevel = "starter" | "builder" | "warrior"
+
+export interface RecommendedPlanDay {
+  id: string
+  label: string
+  focus: RoutineBodyPart[]
+  exercises: RoutineExercise[]
+}
+
+export interface RecommendedWeeklyPlan {
+  level: RecommendedTrainingLevel
+  sessionsPerWeek: number
+  summary: string
+  days: RecommendedPlanDay[]
+}
+
 export const routineBodyParts: RoutineBodyPart[] = ["CHEST", "BACK", "SHOULDERS", "BICEPS", "TRICEPS", "LEGS"]
 
 export const exerciseOptions: ExerciseOption[] = [
@@ -226,4 +242,147 @@ export function createExercise(optionKey: string) {
     weights: [20, 20, 20],
     targetReps: 10,
   } satisfies RoutineExercise
+}
+
+function createRecommendedExercise(optionKey: string, sets: number, targetWeight: number, targetReps: number): RoutineExercise {
+  const option = flatExerciseOptions.find((item) => item.key === optionKey) ?? flatExerciseOptions[0]
+  return {
+    id: `${option.key}-recommended-${Math.random().toString(36).slice(2, 8)}`,
+    nameKey: option.key,
+    bodyPart: option.bodyPart,
+    weightStep: getExerciseWeightStep(option.key),
+    sets,
+    targetWeight,
+    weights: Array.from({ length: sets }, (_, index) => Math.max(0, targetWeight - index * (option.bodyPart === "LEGS" ? 5 : 2))),
+    targetReps,
+  }
+}
+
+const recommendedDayLabels = ["DAY 1", "DAY 2", "DAY 3", "DAY 4", "DAY 5"] as const
+
+function buildRecommendedDay(
+  index: number,
+  focus: RoutineBodyPart[],
+  exerciseConfigs: Array<{ optionKey: string; sets: number; targetWeight: number; targetReps: number }>,
+): RecommendedPlanDay {
+  return {
+    id: `recommended-day-${index + 1}`,
+    label: recommendedDayLabels[index] ?? `DAY ${index + 1}`,
+    focus,
+    exercises: exerciseConfigs.map((config) =>
+      createRecommendedExercise(config.optionKey, config.sets, config.targetWeight, config.targetReps),
+    ),
+  }
+}
+
+export function inferRecommendedTrainingLevel(trainingDays: number): RecommendedTrainingLevel {
+  if (trainingDays >= 24) return "warrior"
+  if (trainingDays >= 8) return "builder"
+  return "starter"
+}
+
+export function generateRecommendedWeeklyPlan(trainingDays: number): RecommendedWeeklyPlan {
+  const level = inferRecommendedTrainingLevel(trainingDays)
+
+  if (level === "warrior") {
+    return {
+      level,
+      sessionsPerWeek: 5,
+      summary: "記録量が多いので、部位分割を使った週5回プランを提案します。",
+      days: [
+        buildRecommendedDay(0, ["CHEST", "TRICEPS"], [
+          { optionKey: "chestPressMachine", sets: 4, targetWeight: 30, targetReps: 10 },
+          { optionKey: "inclineDumbbellPress", sets: 3, targetWeight: 16, targetReps: 10 },
+          { optionKey: "pecDeck", sets: 3, targetWeight: 25, targetReps: 12 },
+          { optionKey: "tricepsPushdown", sets: 3, targetWeight: 20, targetReps: 12 },
+        ]),
+        buildRecommendedDay(1, ["BACK", "BICEPS"], [
+          { optionKey: "latPulldown", sets: 4, targetWeight: 30, targetReps: 10 },
+          { optionKey: "seatedRow", sets: 3, targetWeight: 25, targetReps: 10 },
+          { optionKey: "backExtension", sets: 3, targetWeight: 0, targetReps: 15 },
+          { optionKey: "dumbbellCurl", sets: 3, targetWeight: 8, targetReps: 12 },
+        ]),
+        buildRecommendedDay(2, ["LEGS"], [
+          { optionKey: "legPress", sets: 4, targetWeight: 80, targetReps: 10 },
+          { optionKey: "legCurl", sets: 3, targetWeight: 20, targetReps: 12 },
+          { optionKey: "legExtension", sets: 3, targetWeight: 20, targetReps: 12 },
+          { optionKey: "calfRaise", sets: 3, targetWeight: 20, targetReps: 15 },
+        ]),
+        buildRecommendedDay(3, ["SHOULDERS"], [
+          { optionKey: "dumbbellShoulderPress", sets: 4, targetWeight: 10, targetReps: 10 },
+          { optionKey: "sideRaise", sets: 3, targetWeight: 4, targetReps: 15 },
+          { optionKey: "rearDeltFly", sets: 3, targetWeight: 4, targetReps: 15 },
+          { optionKey: "facePull", sets: 3, targetWeight: 15, targetReps: 12 },
+        ]),
+        buildRecommendedDay(4, ["CHEST", "BACK"], [
+          { optionKey: "pushUp", sets: 3, targetWeight: 0, targetReps: 15 },
+          { optionKey: "machineRow", sets: 3, targetWeight: 25, targetReps: 12 },
+          { optionKey: "cableCrossover", sets: 3, targetWeight: 15, targetReps: 12 },
+          { optionKey: "cableRow", sets: 3, targetWeight: 20, targetReps: 12 },
+        ]),
+      ],
+    }
+  }
+
+  if (level === "builder") {
+    return {
+      level,
+      sessionsPerWeek: 4,
+      summary: "継続できているので、回復も考えた週4回の上半身・下半身ベースで提案します。",
+      days: [
+        buildRecommendedDay(0, ["CHEST", "TRICEPS"], [
+          { optionKey: "chestPressMachine", sets: 3, targetWeight: 25, targetReps: 10 },
+          { optionKey: "dumbbellPress", sets: 3, targetWeight: 12, targetReps: 10 },
+          { optionKey: "tricepsPushdown", sets: 3, targetWeight: 18, targetReps: 12 },
+        ]),
+        buildRecommendedDay(1, ["BACK", "BICEPS"], [
+          { optionKey: "latPulldown", sets: 3, targetWeight: 25, targetReps: 10 },
+          { optionKey: "seatedRow", sets: 3, targetWeight: 20, targetReps: 10 },
+          { optionKey: "hammerCurl", sets: 3, targetWeight: 6, targetReps: 12 },
+        ]),
+        buildRecommendedDay(2, ["LEGS"], [
+          { optionKey: "legPress", sets: 4, targetWeight: 60, targetReps: 10 },
+          { optionKey: "legCurl", sets: 3, targetWeight: 15, targetReps: 12 },
+          { optionKey: "calfRaise", sets: 3, targetWeight: 15, targetReps: 15 },
+        ]),
+        buildRecommendedDay(3, ["SHOULDERS", "CHEST"], [
+          { optionKey: "dumbbellShoulderPress", sets: 3, targetWeight: 8, targetReps: 10 },
+          { optionKey: "sideRaise", sets: 3, targetWeight: 4, targetReps: 15 },
+          { optionKey: "pushUp", sets: 3, targetWeight: 0, targetReps: 12 },
+        ]),
+      ],
+    }
+  }
+
+  return {
+    level,
+    sessionsPerWeek: 3,
+    summary: "まずは習慣化を優先して、全身を無理なく回せる週3回プランを提案します。",
+    days: [
+      buildRecommendedDay(0, ["CHEST", "BACK"], [
+        { optionKey: "chestPressMachine", sets: 3, targetWeight: 20, targetReps: 10 },
+        { optionKey: "latPulldown", sets: 3, targetWeight: 20, targetReps: 10 },
+        { optionKey: "pushUp", sets: 2, targetWeight: 0, targetReps: 10 },
+      ]),
+      buildRecommendedDay(1, ["LEGS", "SHOULDERS"], [
+        { optionKey: "legPress", sets: 3, targetWeight: 40, targetReps: 10 },
+        { optionKey: "legCurl", sets: 2, targetWeight: 10, targetReps: 12 },
+        { optionKey: "sideRaise", sets: 2, targetWeight: 2, targetReps: 15 },
+      ]),
+      buildRecommendedDay(2, ["BACK", "BICEPS", "TRICEPS"], [
+        { optionKey: "seatedRow", sets: 3, targetWeight: 15, targetReps: 10 },
+        { optionKey: "dumbbellCurl", sets: 2, targetWeight: 4, targetReps: 12 },
+        { optionKey: "tricepsPushdown", sets: 2, targetWeight: 12, targetReps: 12 },
+      ]),
+    ],
+  }
+}
+
+export function convertRecommendedPlanToRoutines(plan: RecommendedWeeklyPlan): Routine[] {
+  return plan.days.map((day, index) => ({
+    id: `recommended-routine-${Date.now()}-${index}`,
+    customName: `おすすめ ${day.label}`,
+    targetParts: day.focus,
+    exercises: day.exercises,
+  }))
 }
