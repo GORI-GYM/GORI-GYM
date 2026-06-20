@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function guildDoc(guildId) {
+      return get(/databases/$(database)/documents/guilds/$(guildId));
+    }
+
+    function hasOnlyAllowedKeys(keys, allowedKeys) {
+      return keys.hasOnly(allowedKeys);
+    }
+
+    function isPublicUserRead() {
+      return isSignedIn();
+    }
+
+    function isAllowedPublicUserUpdate(uid) {
+      return isSelf(uid)
+        && hasOnlyAllowedKeys(
+          request.resource.data.diff(resource.data).affectedKeys(),
+          ['displayName', 'photoURL', 'level', 'xp', 'trainingDays', 'gender', 'friendCode', 'updatedAt', 'monthlyXP', 'breakdown', 'dailyMissionSettings', 'dailyMissionHistory', 'friends']
+        );
+    }
+
+    function isFriendRequestParticipant() {
+      return isSignedIn()
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+    }
+
+    function isFriendRequestCreate() {
+      return isSignedIn()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.from != request.resource.data.to;
+    }
+
+    function isGuildMemberByData(data) {
+      return isSignedIn()
+        && data.members is list
+        && request.auth.uid in data.members;
+    }
+
+    function isGuildMember(guildId) {
+      return isGuildMemberByData(guildDoc(guildId).data);
+    }
+
+    function isGuildLeaderByData(data) {
+      return isSignedIn() && data.leaderId == request.auth.uid;
+    }
+
+    function isGuildAdminByData(data) {
+      return isGuildLeaderByData(data)
+        || (data.adminIds is list && request.auth.uid in data.adminIds);
+    }
+
+    function isGuildAdmin(guildId) {
+      return isGuildAdminByData(guildDoc(guildId).data);
+    }
+
+    function isGuildWarParticipant() {
+      return isSignedIn()
+        && (
+          isGuildMember(resource.data.guild1Id)
+          || isGuildMember(resource.data.guild2Id)
+        );
+    }
+
+    function isGuildWarCreate() {
+      return isSignedIn()
+        && request.resource.data.guild1Id is string
+        && request.resource.data.guild2Id is string
+        && request.resource.data.guild1Id != request.resource.data.guild2Id
+        && isGuildAdmin(request.resource.data.guild1Id);
+    }
+
+    function isGuildWarWrite() {
+      return isSignedIn()
+        && (
+          isGuildAdmin(resource.data.guild1Id)
+          || isGuildAdmin(resource.data.guild2Id)
+        );
+    }
+
+    function isBattleParticipant() {
+      return isSignedIn()
+        && (
+          resource.data.challenger == request.auth.uid
+          || resource.data.opponent == request.auth.uid
+        );
+    }
+
+    function isBattleCreate() {
+      return isSignedIn()
+        && request.resource.data.challenger == request.auth.uid
+        && request.resource.data.opponent is string
+        && request.resource.data.challenger != request.resource.data.opponent;
+    }
+
+    match /users/{uid} {
+      allow create: if isSelf(uid);
+      allow read: if isSelf(uid) || isPublicUserRead();
+      allow update: if isAllowedPublicUserUpdate(uid);
+      allow delete: if isSelf(uid);
+
+      match /trainingLogs/{logId} {
+        allow read, write: if isSelf(uid);
+
+        match /likes/{likeUid} {
+          allow read: if isSelf(uid) || isSignedIn();
+          allow create, update, delete: if isSignedIn() && request.auth.uid == likeUid;
+        }
+      }
+    }
+
+    match /friendRequests/{requestId} {
+      allow create: if isFriendRequestCreate();
+      allow read, update, delete: if isFriendRequestParticipant();
+    }
+
+    match /guilds/{guildId} {
+      allow create: if isSignedIn() && request.resource.data.leaderId == request.auth.uid;
+      allow read: if isGuildMemberByData(resource.data);
+      allow update, delete: if isGuildAdminByData(resource.data) || isGuildAdmin(guildId);
+
+      match /messages/{messageId} {
+        allow read: if isGuildMember(guildId);
+        allow create: if isGuildMember(guildId) && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if isGuildAdmin(guildId);
+      }
+    }
+
+    match /guildWars/{warId} {
+      allow create: if isGuildWarCreate();
+      allow read: if isGuildWarParticipant();
+      allow update, delete: if isGuildWarWrite();
+    }
+
+    match /gorillaBattles/{battleId} {
+      allow create: if isBattleCreate();
+      allow read, update, delete: if isBattleParticipant();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
