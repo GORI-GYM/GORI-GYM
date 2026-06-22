@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'pwa/apple-touch-icon.png'],
       manifest: {
-        name: 'GORU GYM',
-        short_name: 'GORU GYM',
+        name: 'Go Train',
+        short_name: 'Go Train',
         theme_color: '#F5A623',
         background_color: '#0a0a0a',
         display: 'standalone',

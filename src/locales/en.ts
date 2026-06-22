@@ -1,6 +1,6 @@
 ﻿const en = {
   common: {
-    appName: "GORU GYM",
+    appName: "Go Train",
     tagline: "TRAIN. LEVEL UP. BECOME LEGEND.",
     menu: "Menu",
     questLog: "Quest Log",
